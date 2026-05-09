@@ -1,7 +1,7 @@
 const CONTACT = {
   phone: "22394307799",
   displayPhone: "+223 94 30 77 99",
-  email: "ramatabore4@gmail.com",
+  email: "ramatabore31@gmail.com",
 };
 
 const categories = ["Tous", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme"];
