@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finaliser la commande | Jolie Lab Beauty</title>
+    <meta
+      name="description"
+      content="Finalisez votre commande Jolie Lab Beauty : panier, livraison à Bamako ou international, paiement et envoi WhatsApp."
+    />
+    <meta name="theme-color" content="#15120f" />
+    <link rel="icon" type="image/png" href="assets/brand/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="checkout-page">
+    <header class="product-page-header checkout-header">
+      <a class="brand" href="index.html#accueil" aria-label="Jolie Lab Beauty accueil">
+        <span class="brand-mark">
+          <img class="brand-logo" src="assets/brand/logo.png" alt="" />
+        </span>
+        <span><strong>Jolie Lab</strong><small>Beauty</small></span>
+      </a>
+      <nav class="product-page-nav">
+        <a href="index.html#boutique">Boutique</a>
+        <a href="index.html#livraison">Livraison</a>
+        <a href="index.html#contact">Contact</a>
+      </nav>
+      <span class="cart-pill checkout-count"><span>Panier</span><strong data-checkout-count>0</strong></span>
+    </header>
+
+    <main class="checkout-main">
+      <section class="checkout-hero">
+        <span class="mini-label">Commande</span>
+        <h1>Finaliser ma commande</h1>
+        <p>
+          Vérifiez vos produits, ajoutez vos informations de livraison, puis envoyez une commande
+          WhatsApp déjà prête à Jolie Lab Beauty.
+        </p>
+        <div class="checkout-steps" aria-label="Étapes de commande">
+          <span>1. Panier</span>
+          <span>2. Livraison</span>
+          <span>3. WhatsApp</span>
+        </div>
+      </section>
+
+      <section class="checkout-layout">
+        <section class="checkout-card checkout-cart-panel" aria-labelledby="checkout-cart-title">
+          <div class="checkout-card-head">
+            <div>
+              <span class="mini-label">Étape 1</span>
+              <h2 id="checkout-cart-title">Votre sélection</h2>
+            </div>
+            <a href="index.html#boutique">Ajouter un produit</a>
+          </div>
+          <div class="checkout-items" data-checkout-items></div>
+        </section>
+
+        <form class="checkout-card checkout-form-panel" data-checkout-form novalidate>
+          <div class="checkout-card-head">
+            <div>
+              <span class="mini-label">Étape 2</span>
+              <h2>Livraison & contact</h2>
+            </div>
+          </div>
+          <div class="checkout-fields">
+            <label>
+              Nom complet
+              <input name="customerName" type="text" placeholder="Votre nom" autocomplete="name" required />
+            </label>
+            <label>
+              Téléphone WhatsApp
+              <input name="customerPhone" type="tel" placeholder="+223..." autocomplete="tel" required />
+            </label>
+            <label>
+              Zone de livraison
+              <select name="deliveryZone" required>
+                <option value="Bamako">Bamako</option>
+                <option value="International">International</option>
+              </select>
+            </label>
+            <label>
+              Moyen de paiement
+              <select name="paymentMethod" required>
+                <option value="Paiement à la livraison">Paiement à la livraison</option>
+                <option value="Orange Money">Orange Money</option>
+                <option value="Moov Money">Moov Money</option>
+              </select>
+            </label>
+            <label class="checkout-field-wide">
+              Adresse / repère de livraison
+              <textarea name="address" rows="4" placeholder="Quartier, rue, repère, pays..." required></textarea>
+            </label>
+            <label class="checkout-field-wide">
+              Note pour la commande
+              <textarea name="notes" rows="3" placeholder="Teinte, préférence, disponibilité, précision produit..."></textarea>
+            </label>
+          </div>
+        </form>
+
+        <aside class="checkout-card checkout-summary" aria-labelledby="checkout-summary-title">
+          <span class="mini-label">Étape 3</span>
+          <h2 id="checkout-summary-title">Résumé</h2>
+          <div class="checkout-summary-lines">
+            <p><span>Articles</span><strong data-summary-count>0</strong></p>
+            <p><span>Total produits</span><strong data-summary-total>0 FCFA</strong></p>
+            <p><span>Livraison</span><strong>À confirmer</strong></p>
+          </div>
+          <p class="checkout-note">
+            Les frais de livraison et la disponibilité sont confirmés sur WhatsApp avant validation finale.
+          </p>
+          <button class="button button-primary checkout-submit" type="button" data-send-order>
+            Envoyer la commande sur WhatsApp
+          </button>
+          <p class="checkout-message" data-checkout-message aria-live="polite"></p>
+        </aside>
+      </section>
+    </main>
+
+    <script src="data/products.js"></script>
+    <script src="checkout.js"></script>
+  </body>
+</html>
