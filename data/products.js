@@ -22,14 +22,14 @@ window.JOLIE_PRODUCTS = [
     "name": "Masque Stick au Thé Vert Purifiant",
     "slug": "02-masque-stick-au-the-vert-purifiant",
     "category": "Visage",
-    "price": 8000,
+    "price": 6000,
     "priceNote": null,
     "images": [
       "assets/products/product-02-01.jpeg",
       "assets/products/product-02-02.jpeg",
       "assets/products/product-02-03.jpeg"
     ],
-    "description": "Masque Stick au Thé Vert Purifiant 🌿\nDescription :\nOffre à ta peau un nettoyage en profondeur avec le masque stick au thé vert, pratique et facile à appliquer. Sa formule naturelle aide à éliminer les impuretés, contrôler l’excès de sébum et réduire l’apparence des points noirs.\nNettoie les pores en profondeur\n* Réduit les points noirs et l’acné\n* Contrôle le sébum\n* Laisse la peau douce, fraîche et éclatante\n* Format pratique et facile à utiliser \nConseils d’utilisation :\nAppliquer directement sur le visage propre, laisser poser 10 à 15 minutes puis rincer à l’eau tiède. À utiliser 2 à 3 fois par semaine.\n\nPrix 8000f",
+    "description": "Masque Stick au Thé Vert Purifiant 🌿\nDescription :\nOffre à ta peau un nettoyage en profondeur avec le masque stick au thé vert, pratique et facile à appliquer. Sa formule naturelle aide à éliminer les impuretés, contrôler l’excès de sébum et réduire l’apparence des points noirs.\nNettoie les pores en profondeur\n* Réduit les points noirs et l’acné\n* Contrôle le sébum\n* Laisse la peau douce, fraîche et éclatante\n* Format pratique et facile à utiliser \nConseils d’utilisation :\nAppliquer directement sur le visage propre, laisser poser 10 à 15 minutes puis rincer à l’eau tiède. À utiliser 2 à 3 fois par semaine.\n\nPrix 6000f",
     "summary": "Masque Stick au Thé Vert Purifiant 🌿 Description : Offre à ta peau un nettoyage en profondeur avec le masque stick au thé vert, pratique et facile...",
     "pageUrl": "produits/02-masque-stick-au-the-vert-purifiant.html",
     "usage": "Appliquer sur peau propre, laisser poser selon la tolérance de la peau, puis rincer. Commencer doucement si la peau est sensible.",

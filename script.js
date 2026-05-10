@@ -20,7 +20,7 @@ const products = window.JOLIE_PRODUCTS || [
     id: 2,
     name: "Masque Stick au Thé Vert Purifiant",
     category: "Visage",
-    price: 8000,
+    price: 6000,
     images: ["product-02-01.jpeg", "product-02-02.jpeg", "product-02-03.jpeg"],
     description: "Masque pratique pour nettoyer en profondeur, contrôler l'excès de sébum et réduire l'apparence des points noirs.",
     benefits: ["Nettoie les pores", "Aide contre les points noirs", "Texture stick facile à appliquer"],
