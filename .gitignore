@@ -1,2 +1,7 @@
 .vercel
 local-server*.log
+node_modules
+.env
+.env.*
+.sanity
+dist

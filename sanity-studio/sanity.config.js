@@ -6,8 +6,8 @@ import {schemaTypes} from "./schemaTypes";
 export default defineConfig({
   name: "jolie-lab-beauty",
   title: "Jolie Lab Beauty",
-  projectId: "REMPLACER_PROJECT_ID",
-  dataset: "production",
+  projectId: process.env.SANITY_STUDIO_PROJECT_ID || "REMPLACER_PROJECT_ID",
+  dataset: process.env.SANITY_STUDIO_DATASET || "production",
   plugins: [structureTool(), visionTool()],
   schema: {
     types: schemaTypes,
