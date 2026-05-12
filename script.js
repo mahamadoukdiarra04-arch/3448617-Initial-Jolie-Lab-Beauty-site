@@ -6,7 +6,7 @@ const CONTACT = {
 
 const categories = ["Tous", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme"];
 
-const products = window.JOLIE_PRODUCTS || [
+let products = window.JOLIE_PRODUCTS || [
   {
     id: 1,
     name: "Sérum Anti-Acné Intensif",
@@ -184,7 +184,7 @@ const products = window.JOLIE_PRODUCTS || [
 const state = {
   filter: "Tous",
   search: "",
-  cart: loadCart(),
+  cart: {},
   modalProduct: null,
 };
 
@@ -220,6 +220,8 @@ function formatPrice(price) {
 }
 
 function productImage(file) {
+  if (!file) return "assets/brand/hero-01.jpeg";
+  if (/^(https?:)?\/\//.test(file) || file.startsWith("data:")) return file;
   if (file.startsWith("assets/")) return file;
   return `assets/products/${file}`;
 }
@@ -247,7 +249,7 @@ function cartKey(productId, variantId = "") {
 
 function parseCartKey(key) {
   const [id, variantId = ""] = String(key).split("::");
-  return { id: Number(id), variantId };
+  return { id, variantId };
 }
 
 function normalizeCart(cart) {
@@ -255,7 +257,7 @@ function normalizeCart(cart) {
     const quantity = Number(rawQuantity) || 0;
     if (quantity <= 0) return next;
     const parsed = parseCartKey(rawKey);
-    const product = products.find((item) => item.id === parsed.id);
+    const product = products.find((item) => String(item.id) === String(parsed.id));
     if (!product) return next;
     const variant = parsed.variantId ? productVariant(product, parsed.variantId) : defaultVariant(product);
     const key = cartKey(product.id, variant?.id);
@@ -312,12 +314,12 @@ function productBenefits(product) {
 }
 
 function productSlug(product) {
-  return product.name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+  if (product.slug) return product.slug;
+  return (window.JolieCatalog?.slugify || ((value) => value))(product.name);
+}
+
+function productPageUrl(product) {
+  return `produit.html?slug=${encodeURIComponent(productSlug(product))}&id=${encodeURIComponent(product.id)}`;
 }
 
 function getSuitedFor(product) {
@@ -366,7 +368,7 @@ function cartEntries() {
   return Object.entries(state.cart)
     .map(([key, quantity]) => {
       const parsed = parseCartKey(key);
-      const product = products.find((item) => item.id === parsed.id);
+      const product = products.find((item) => String(item.id) === String(parsed.id));
       if (!product) return null;
       const variant = parsed.variantId ? productVariant(product, parsed.variantId) : defaultVariant(product);
       return { key, product, variant, quantity };
@@ -383,7 +385,8 @@ function cartAmount() {
 }
 
 function renderFilters() {
-  filterWrap.innerHTML = categories
+  const categoryOptions = [...new Set([...categories, ...products.map((product) => product.category).filter(Boolean)])];
+  filterWrap.innerHTML = categoryOptions
     .map(
       (category) => `
         <button class="${category === state.filter ? "is-active" : ""}" type="button" data-filter="${category}">
@@ -407,7 +410,7 @@ function renderProducts() {
       (product) => `
         <article class="product-card" itemscope itemtype="https://schema.org/Product">
           <meta itemprop="sku" content="JLB-${String(product.id).padStart(3, "0")}" />
-          <a class="product-media" href="${product.pageUrl}" aria-label="Voir la page produit ${product.name}">
+          <a class="product-media" href="${productPageUrl(product)}" aria-label="Voir la page produit ${product.name}">
             <img src="${productImage(product.images[0])}" alt="${product.name}" loading="lazy" itemprop="image" />
             <span class="product-badge">${product.category}</span>
           </a>
@@ -423,7 +426,7 @@ function renderProducts() {
             ${variantSelectMarkup(product, "card")}
             <div class="card-actions">
               <button class="button button-primary" type="button" data-add="${product.id}">Ajouter</button>
-              <a class="quick-view" href="${product.pageUrl}" aria-label="Ouvrir la page produit">Détails</a>
+              <a class="quick-view" href="${productPageUrl(product)}" aria-label="Ouvrir la page produit">Détails</a>
             </div>
           </div>
         </article>
@@ -527,7 +530,7 @@ function renderProductStructuredData() {
 }
 
 function addToCart(id, variantId = "") {
-  const product = products.find((item) => item.id === Number(id));
+  const product = products.find((item) => String(item.id) === String(id));
   if (!product) return { ok: false, message: "Produit introuvable." };
   if (product.variants?.length && !variantId) {
     return { ok: false, message: "Choisissez Petit complet ou Grand complet avant d'ajouter ce produit." };
@@ -563,7 +566,7 @@ function closeCart() {
 }
 
 function openModal(id) {
-  const product = products.find((item) => item.id === Number(id));
+  const product = products.find((item) => String(item.id) === String(id));
   if (!product) return;
 
   state.modalProduct = product;
@@ -712,12 +715,18 @@ document.addEventListener("keydown", (event) => {
   closeModal();
 });
 
-renderFilters();
-renderProducts();
-renderCart();
-renderProductStructuredData();
+async function initializeCatalogue() {
+  products = await (window.JolieCatalog?.loadProducts(products) || Promise.resolve(products));
+  state.cart = loadCart();
+  renderFilters();
+  renderProducts();
+  renderCart();
+  renderProductStructuredData();
 
-if (location.hash.startsWith("#produit-")) {
-  const productId = Number(location.hash.match(/^#produit-(\d+)/)?.[1]);
-  if (productId) openModal(productId);
+  if (location.hash.startsWith("#produit-")) {
+    const productId = location.hash.match(/^#produit-([^-\s]+)/)?.[1];
+    if (productId) openModal(productId);
+  }
 }
+
+initializeCatalogue();

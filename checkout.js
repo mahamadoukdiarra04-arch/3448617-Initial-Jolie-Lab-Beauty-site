@@ -1,4 +1,4 @@
-const products = window.JOLIE_PRODUCTS || [];
+let products = window.JOLIE_PRODUCTS || [];
 const cartItemsNode = document.querySelector("[data-checkout-items]");
 const countNode = document.querySelector("[data-checkout-count]");
 const summaryCount = document.querySelector("[data-summary-count]");
@@ -12,6 +12,8 @@ function formatPrice(price) {
 }
 
 function productImage(file) {
+  if (!file) return "assets/brand/hero-01.jpeg";
+  if (/^(https?:)?\/\//.test(file) || file.startsWith("data:")) return file;
   return file.startsWith("assets/") ? file : `assets/products/${file}`;
 }
 
@@ -30,7 +32,7 @@ function cartKey(productId, variantId = "") {
 
 function parseCartKey(key) {
   const [id, variantId = ""] = String(key).split("::");
-  return { id: Number(id), variantId };
+  return { id, variantId };
 }
 
 function normalizeCart(cart) {
@@ -38,7 +40,7 @@ function normalizeCart(cart) {
     const quantity = Number(rawQuantity) || 0;
     if (quantity <= 0) return next;
     const parsed = parseCartKey(rawKey);
-    const product = products.find((item) => item.id === parsed.id);
+    const product = products.find((item) => String(item.id) === String(parsed.id));
     if (!product) return next;
     const variant = parsed.variantId ? productVariant(product, parsed.variantId) : defaultVariant(product);
     const key = cartKey(product.id, variant?.id);
@@ -85,7 +87,7 @@ function cartEntries() {
   return Object.entries(cart)
     .map(([key, quantity]) => {
       const parsed = parseCartKey(key);
-      const product = products.find((item) => item.id === parsed.id);
+      const product = products.find((item) => String(item.id) === String(parsed.id));
       if (!product) return null;
       const variant = parsed.variantId ? productVariant(product, parsed.variantId) : defaultVariant(product);
       return { key, product, variant, quantity };
@@ -214,4 +216,9 @@ Object.entries(saved).forEach(([name, value]) => {
   if (field) field.value = value;
 });
 
-renderCheckout();
+async function initializeCheckout() {
+  products = await (window.JolieCatalog?.loadProducts(products) || Promise.resolve(products));
+  renderCheckout();
+}
+
+initializeCheckout();
