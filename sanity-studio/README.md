@@ -5,8 +5,8 @@ Ce dossier prépare l'interface admin des produits Jolie Lab Beauty.
 ## Mise en route
 
 1. Créer un projet sur Sanity.
-2. Remplacer `REMPLACER_PROJECT_ID` dans `sanity.config.js` ou utiliser la variable `SANITY_STUDIO_PROJECT_ID`.
-3. Renseigner le même `projectId` dans `../data/sanity-config.js`.
+2. Le projet Sanity actuel est `fkziz8e9`. Si besoin, il peut être remplacé dans `sanity.config.js`, `sanity.cli.js` et `../data/sanity-config.js`.
+3. Garder le dataset `production`, sauf besoin spécifique.
 4. Installer les dépendances :
 
 ```bash
@@ -44,5 +44,7 @@ npm run import:products -- --replace
 ```bash
 npm run deploy
 ```
+
+Studio deploye : `https://jolie-lab-beauty.sanity.studio/`
 
 Le site public lit les produits en direct depuis Sanity quand `projectId` est renseigné. Si Sanity est indisponible ou non configuré, il utilise le catalogue local `data/products.js`.

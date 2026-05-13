@@ -31,6 +31,30 @@ const client = createClient({
   useCdn: false,
 });
 
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function withRetry(label, action, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      return await action();
+    } catch (error) {
+      const status = error.statusCode || error.status || error.response?.statusCode;
+      const retryable = !status || status === 429 || status >= 500;
+      if (!retryable || attempt === retries) {
+        throw error;
+      }
+
+      const delay = 800 * attempt;
+      console.warn(`${label} failed with status ${status || "unknown"}, retrying in ${delay}ms...`);
+      await sleep(delay);
+    }
+  }
+}
+
 function slugify(value) {
   return String(value)
     .normalize("NFD")
@@ -50,10 +74,12 @@ async function readLocalProducts() {
 
 async function uploadImage(imagePath, productName, index) {
   const absolutePath = path.join(siteDir, imagePath);
-  const asset = await client.assets.upload("image", createReadStream(absolutePath), {
-    filename: path.basename(imagePath),
-    title: `${productName} ${index + 1}`,
-  });
+  const asset = await withRetry(`Image upload for ${productName}`, () =>
+    client.assets.upload("image", createReadStream(absolutePath), {
+      filename: path.basename(imagePath),
+      title: `${productName} ${index + 1}`,
+    }),
+  );
 
   return {
     _key: `image-${index + 1}`,
@@ -104,7 +130,7 @@ console.log(`Preparing ${products.length} products for Sanity project ${projectI
 for (const [index, product] of products.entries()) {
   const documentId = `product-${String(product.id).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
   if (!replaceExisting) {
-    const existing = await client.getDocument(documentId);
+    const existing = await withRetry(`Document lookup for ${product.name}`, () => client.getDocument(documentId));
     if (existing) {
       console.log(`Already exists, skipped: ${product.name}`);
       continue;
@@ -119,9 +145,9 @@ for (const [index, product] of products.entries()) {
   const document = productDocument(product, images, index);
   document._id = documentId;
   if (replaceExisting) {
-    await client.createOrReplace(document);
+    await withRetry(`Document upsert for ${product.name}`, () => client.createOrReplace(document));
   } else {
-    await client.createIfNotExists(document);
+    await withRetry(`Document create for ${product.name}`, () => client.createIfNotExists(document));
   }
   console.log(`${replaceExisting ? "Upserted" : "Created if missing"}: ${product.name}`);
 }
