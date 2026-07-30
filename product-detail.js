@@ -26,6 +26,34 @@ function productImage(file) {
   return `assets/products/${file}`;
 }
 
+function productVideoUrl(video) {
+  if (!video) return "";
+  if (typeof video === "string") return video;
+  return video.url || "";
+}
+
+function firstProductVideo(product) {
+  if (!Array.isArray(product.videos) || !product.videos.length) return null;
+  return product.videos.find((video) => productVideoUrl(video)) || null;
+}
+
+function productVideoMarkup(product, poster) {
+  const video = firstProductVideo(product);
+  if (!video) return "";
+  const label = video.alt || video.title || product.name;
+  return `
+    <video
+      class="product-detail-video"
+      src="${escapeHtml(productVideoUrl(video))}"
+      poster="${escapeHtml(poster)}"
+      controls
+      playsinline
+      preload="metadata"
+      aria-label="${escapeHtml(label)}"
+    ></video>
+  `;
+}
+
 function defaultVariant(product) {
   return Array.isArray(product.variants) && product.variants.length ? product.variants[0] : null;
 }
@@ -132,6 +160,7 @@ function updateMeta(product) {
 
 function renderProduct(product) {
   const images = product.images?.length ? product.images : ["assets/brand/hero-01.jpeg"];
+  const poster = productImage(images[0]);
   const related = products.filter((item) => String(item.id) !== String(product.id) && item.category === product.category).slice(0, 3);
   const whatsappText = `Bonjour Jolie Lab Beauty, je souhaite commander : ${product.name} (${productPriceLabel(product)}).`;
   detailRoot.innerHTML = `
@@ -143,7 +172,8 @@ function renderProduct(product) {
 
     <section class="product-detail-layout">
       <div class="product-detail-gallery">
-        <img class="product-detail-main-image" src="${productImage(images[0])}" alt="${escapeHtml(product.name)}" data-gallery-main />
+        ${productVideoMarkup(product, poster)}
+        <img class="product-detail-main-image" src="${escapeHtml(poster)}" alt="${escapeHtml(product.name)}" data-gallery-main />
         <div class="product-detail-thumbs">
           ${images
             .map(

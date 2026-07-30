@@ -12,6 +12,7 @@
     usage,
     suitedFor,
     "images": images[]{"url": asset->url, alt},
+    "videos": videos[]{"url": asset->url, title, alt, "mimeType": asset->mimeType, "originalFilename": asset->originalFilename},
     variants[]{id, name, price}
   }`;
 
@@ -26,8 +27,22 @@
     return image.url || image.asset?.url || null;
   }
 
+  function normalizeVideo(video) {
+    if (!video) return null;
+    if (typeof video === "string") return {url: video};
+    const url = video.url || video.asset?.url;
+    if (!url) return null;
+    return {
+      url,
+      title: video.title || video.alt || video.originalFilename || "",
+      alt: video.alt || video.title || "",
+      mimeType: video.mimeType || "",
+    };
+  }
+
   function normalizeProduct(product, index) {
     const images = (product.images || []).map(normalizeImage).filter(Boolean);
+    const videos = (product.videos || []).map(normalizeVideo).filter(Boolean);
     const id = product.productId || product.id || product._id || index + 1;
     const name = product.name || `Produit ${index + 1}`;
     const slug = product.slug || slugify(name);
@@ -39,6 +54,7 @@
       price: Number(product.price) || 0,
       priceNote: product.priceNote || null,
       images,
+      videos,
       description: product.description || name,
       summary: product.summary || summaryFromDescription(product.description || name),
       usage: product.usage || "",

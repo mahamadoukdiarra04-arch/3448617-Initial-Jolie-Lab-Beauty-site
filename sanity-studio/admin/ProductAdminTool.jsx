@@ -4,6 +4,7 @@ import {useClient} from "sanity";
 
 const PRODUCT_QUERY = `*[_type == "product" && !(_id in path("drafts.**"))] | order(coalesce(sortOrder, productId) asc, name asc){
   _id,
+  productId,
   name,
   category,
   price,
@@ -14,10 +15,12 @@ const PRODUCT_QUERY = `*[_type == "product" && !(_id in path("drafts.**"))] | or
   "slug": slug.current,
   "imageUrl": images[0].asset->url,
   "imageAlt": coalesce(images[0].alt, name),
+  "videoUrl": videos[0].asset->url,
+  "videoTitle": coalesce(videos[0].title, videos[0].alt, name),
   variants[]{name, price}
 }`;
 
-const categories = ["Toutes", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme"];
+const categories = ["Toutes", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme"];
 
 function formatPrice(value) {
   const price = Number(value);
@@ -26,8 +29,11 @@ function formatPrice(value) {
 }
 
 function productUrl(product) {
-  if (!product.slug) return "https://jolielabbeauty.com/";
-  return `https://jolielabbeauty.com/produits/${product.slug}.html`;
+  const params = new URLSearchParams();
+  if (product.slug) params.set("slug", product.slug);
+  if (product.productId) params.set("id", String(product.productId));
+  const query = params.toString();
+  return `https://jolielabbeauty.com/produit.html${query ? `?${query}` : ""}`;
 }
 
 function ProductAdminTool() {
@@ -201,7 +207,20 @@ function ProductAdminTool() {
             return (
               <article className="admin-product-card" key={product._id}>
                 <div className="product-media">
-                  {product.imageUrl ? (
+                  {product.videoUrl ? (
+                    <>
+                      <video
+                        src={product.videoUrl}
+                        poster={product.imageUrl || ""}
+                        controls
+                        muted
+                        playsInline
+                        preload="metadata"
+                        aria-label={product.videoTitle || product.name}
+                      />
+                      <span className="media-pill">Vidéo</span>
+                    </>
+                  ) : product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.imageAlt || product.name} loading="lazy" />
                   ) : (
                     <span>Image</span>
@@ -442,19 +461,33 @@ const styles = `
   position: relative;
 }
 
-.product-media img {
+.product-media img,
+.product-media video {
   display: block;
   height: 100%;
   object-fit: cover;
   width: 100%;
 }
 
-.product-media > span:not(.status-pill) {
+.product-media > span:not(.status-pill):not(.media-pill) {
   align-items: center;
   color: #8d8173;
   display: flex;
   height: 100%;
   justify-content: center;
+}
+
+.media-pill {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, .9);
+  border-radius: 999px;
+  color: #19150f;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 10px;
+  position: absolute;
+  right: 12px;
+  top: 12px;
 }
 
 .status-pill {

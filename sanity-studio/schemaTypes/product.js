@@ -41,7 +41,7 @@ export const product = defineType({
       title: "Catégorie",
       type: "string",
       options: {
-        list: ["Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme"],
+        list: ["Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme"],
       },
       validation: (Rule) => Rule.required(),
     }),
@@ -101,6 +101,34 @@ export const product = defineType({
         },
       ],
       validation: (Rule) => Rule.required().min(1),
+    }),
+    defineField({
+      name: "videos",
+      title: "Vidéos",
+      type: "array",
+      description: "Optionnel. La première vidéo renseignée s'affiche sur les cartes produit du site.",
+      of: [
+        {
+          type: "file",
+          title: "Vidéo produit",
+          options: {
+            accept: "video/mp4,video/webm,video/quicktime",
+          },
+          fields: [
+            {
+              name: "title",
+              title: "Titre vidéo",
+              type: "string",
+            },
+            {
+              name: "alt",
+              title: "Description accessible",
+              type: "string",
+              description: "Texte court décrivant la vidéo.",
+            },
+          ],
+        },
+      ],
     }),
     defineField({
       name: "variants",

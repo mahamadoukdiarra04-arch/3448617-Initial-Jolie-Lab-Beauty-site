@@ -52,7 +52,7 @@ Le client peut utiliser l'onglet `Boutique Admin` pour gerer les produits avec u
 - rechercher et filtrer les produits ;
 - modifier rapidement le prix principal ;
 - masquer ou afficher un produit sur le site ;
-- ouvrir la fiche complete pour modifier le nom, les images, les descriptions, les variantes et la categorie ;
+- ouvrir la fiche complete pour modifier le nom, les images, les videos, les descriptions, les variantes et la categorie ;
 - creer un nouveau produit.
 
 Le site public lit les produits en direct depuis Sanity quand `projectId` est renseigné. Si Sanity est indisponible ou non configuré, il utilise le catalogue local `data/products.js`.

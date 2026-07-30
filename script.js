@@ -4,7 +4,7 @@ const CONTACT = {
   email: "ramatabore31@gmail.com",
 };
 
-const categories = ["Tous", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme"];
+const categories = ["Tous", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme"];
 
 let products = window.JOLIE_PRODUCTS || [
   {
@@ -234,6 +234,42 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function productVideoUrl(video) {
+  if (!video) return "";
+  if (typeof video === "string") return video;
+  return video.url || "";
+}
+
+function firstProductVideo(product) {
+  if (!Array.isArray(product.videos) || !product.videos.length) return null;
+  return product.videos.find((video) => productVideoUrl(video)) || null;
+}
+
+function productCardMediaMarkup(product) {
+  const poster = productImage(product.images?.[0]);
+  const video = firstProductVideo(product);
+  if (!video) {
+    return `<img src="${escapeHtml(poster)}" alt="${escapeHtml(product.name)}" loading="lazy" itemprop="image" />`;
+  }
+
+  const label = video.alt || video.title || product.name;
+  return `
+    <meta itemprop="image" content="${escapeHtml(poster)}" />
+    <video
+      class="product-card-video"
+      src="${escapeHtml(productVideoUrl(video))}"
+      poster="${escapeHtml(poster)}"
+      muted
+      playsinline
+      autoplay
+      loop
+      preload="metadata"
+      aria-label="${escapeHtml(label)}"
+    ></video>
+    <span class="product-video-badge">Vidéo</span>
+  `;
+}
+
 function defaultVariant(product) {
   return Array.isArray(product.variants) && product.variants.length ? product.variants[0] : null;
 }
@@ -328,6 +364,7 @@ function getSuitedFor(product) {
   if (name.includes("acné") || name.includes("imperfection")) return "Les peaux sujettes aux boutons, marques visibles, excès de sébum ou texture irrégulière.";
   if (name.includes("cheveux") || name.includes("hair")) return "Les routines capillaires qui ciblent la casse, la chute, la pousse ou le manque de volume.";
   if (name.includes("barbe") || product.category === "Homme") return "Les hommes qui souhaitent entretenir la barbe, le cuir chevelu ou les zones clairsemées.";
+  if (product.category === "Homme & Femme") return "Les routines beauté mixtes, choisies pour convenir aux besoins des femmes comme des hommes.";
   if (product.category === "Accessoires") return "Les routines beauté quotidiennes qui ont besoin d'un accessoire pratique, simple et facile à nettoyer.";
   if (product.category === "Packs") return "Les clientes qui préfèrent une routine complète avec plusieurs produits complémentaires.";
   if (product.category === "Corps") return "Les soins corps orientés douceur, confort, éclat et aspect plus uniforme de la peau.";
@@ -389,8 +426,8 @@ function renderFilters() {
   filterWrap.innerHTML = categoryOptions
     .map(
       (category) => `
-        <button class="${category === state.filter ? "is-active" : ""}" type="button" data-filter="${category}">
-          ${category}
+        <button class="${category === state.filter ? "is-active" : ""}" type="button" data-filter="${escapeHtml(category)}">
+          ${escapeHtml(category)}
         </button>
       `,
     )
@@ -410,18 +447,18 @@ function renderProducts() {
       (product) => `
         <article class="product-card" itemscope itemtype="https://schema.org/Product">
           <meta itemprop="sku" content="JLB-${String(product.id).padStart(3, "0")}" />
-          <a class="product-media" href="${productPageUrl(product)}" aria-label="Voir la page produit ${product.name}">
-            <img src="${productImage(product.images[0])}" alt="${product.name}" loading="lazy" itemprop="image" />
-            <span class="product-badge">${product.category}</span>
+          <a class="product-media" href="${productPageUrl(product)}" aria-label="Voir la page produit ${escapeHtml(product.name)}">
+            ${productCardMediaMarkup(product)}
+            <span class="product-badge">${escapeHtml(product.category)}</span>
           </a>
           <div class="product-body">
-            <h3 itemprop="name">${product.name}</h3>
-            <p itemprop="description">${product.summary || product.description}</p>
+            <h3 itemprop="name">${escapeHtml(product.name)}</h3>
+            <p itemprop="description">${escapeHtml(product.summary || product.description)}</p>
             <div class="price-row" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
               <meta itemprop="priceCurrency" content="XOF" />
               <meta itemprop="price" content="${product.price}" />
               <link itemprop="availability" href="https://schema.org/InStock" />
-              <strong>${productPriceLabel(product)}</strong>
+              <strong>${escapeHtml(productPriceLabel(product))}</strong>
             </div>
             ${variantSelectMarkup(product, "card")}
             <div class="card-actions">
