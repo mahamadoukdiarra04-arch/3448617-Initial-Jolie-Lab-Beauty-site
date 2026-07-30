@@ -20,7 +20,7 @@ const PRODUCT_QUERY = `*[_type == "product" && !(_id in path("drafts.**"))] | or
   variants[]{name, price}
 }`;
 
-const categories = ["Toutes", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme"];
+const categories = ["Toutes", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme", "Parfum"];
 
 function formatPrice(value) {
   const price = Number(value);

@@ -41,7 +41,7 @@ export const product = defineType({
       title: "Catégorie",
       type: "string",
       options: {
-        list: ["Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme"],
+        list: ["Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme", "Parfum"],
       },
       validation: (Rule) => Rule.required(),
     }),
