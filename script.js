@@ -4,7 +4,7 @@ const CONTACT = {
   email: "ramatabore31@gmail.com",
 };
 
-const categories = ["Tous", "Visage", "Corps", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme", "Parfum"];
+const categories = ["Tous", "Visage", "Corps", "Corps & Visage", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme", "Parfum"];
 
 let products = window.JOLIE_PRODUCTS || [
   {
@@ -366,6 +366,7 @@ function getSuitedFor(product) {
   if (name.includes("barbe") || product.category === "Homme") return "Les hommes qui souhaitent entretenir la barbe, le cuir chevelu ou les zones clairsemées.";
   if (product.category === "Homme & Femme") return "Les routines beauté mixtes, choisies pour convenir aux besoins des femmes comme des hommes.";
   if (product.category === "Parfum") return "Les clientes et clients qui veulent compléter leur routine avec une touche parfumée élégante.";
+  if (product.category === "Corps & Visage") return "Les routines complètes qui ciblent à la fois l'éclat du visage et le soin du corps.";
   if (product.category === "Accessoires") return "Les routines beauté quotidiennes qui ont besoin d'un accessoire pratique, simple et facile à nettoyer.";
   if (product.category === "Packs") return "Les clientes qui préfèrent une routine complète avec plusieurs produits complémentaires.";
   if (product.category === "Corps") return "Les soins corps orientés douceur, confort, éclat et aspect plus uniforme de la peau.";
@@ -381,6 +382,7 @@ function getUsageAdvice(product) {
   if (name.includes("lingettes")) return "Utiliser pour retirer maquillage ou impuretés, puis compléter avec un soin adapté si besoin.";
   if (name.includes("cheveux") || name.includes("hair") || name.includes("barbe")) return "Appliquer régulièrement selon la routine choisie. Demander confirmation sur WhatsApp pour la fréquence conseillée.";
   if (product.category === "Parfum") return "Vaporiser légèrement sur les zones de pulsation ou les vêtements, en évitant les yeux et les peaux irritées.";
+  if (product.category === "Corps & Visage") return "Utiliser chaque produit selon sa zone d'application, visage ou corps, et demander conseil sur WhatsApp pour l'ordre de routine.";
   if (product.category === "Packs") return "Utiliser les produits du pack dans l'ordre conseillé au moment de la commande. Faire un test sur une petite zone si la peau est sensible.";
   if (product.category === "Visage") return "Appliquer sur peau propre et commencer progressivement. Éviter le contour des yeux et demander conseil en cas de peau sensible.";
   return "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.";
