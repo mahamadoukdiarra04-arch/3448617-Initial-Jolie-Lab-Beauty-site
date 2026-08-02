@@ -22,6 +22,26 @@ PAGES_DIR = SITE / "produits"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
+META_PIXEL_HEAD = """    <!-- Meta Pixel Code -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '1012624201673483');
+      fbq('track', 'PageView');
+    </script>
+    <!-- End Meta Pixel Code -->"""
+
+META_PIXEL_NOSCRIPT = """    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=1012624201673483&ev=PageView&noscript=1"
+      alt=""
+    /></noscript>"""
+
 NAMES = {
     1: "Sérum Anti-Acné Intensif",
     2: "Masque Stick au Thé Vert Purifiant",
@@ -382,8 +402,10 @@ def render_page(product: dict, products: list[dict], logo_path: str | None) -> s
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../styles.css" />
     <script type="application/ld+json">{product_json_ld(product)}</script>
+{META_PIXEL_HEAD}
   </head>
   <body class="product-page" data-product-id="{product['id']}">
+{META_PIXEL_NOSCRIPT}
     <header class="product-page-header">
       <a class="brand" href="../index.html#accueil" aria-label="Jolie Lab Beauty accueil">
         <span class="brand-mark">{logo_markup}</span>
