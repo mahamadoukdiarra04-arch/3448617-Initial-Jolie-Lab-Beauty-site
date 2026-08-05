@@ -11,6 +11,8 @@ $form = jolie_admin_product_empty_form();
 $notice = '';
 $error = '';
 $setupError = '';
+$submittedPayload = [];
+$categories = [];
 
 function jolie_admin_first_media_line(string $raw): string
 {
@@ -62,11 +64,13 @@ try {
         }
         $form = jolie_admin_product_for_form($product);
     }
+    $categories = jolie_product_categories();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         jolie_verify_csrf();
         $action = (string) ($_POST['action'] ?? 'save');
         $id = (int) ($_POST['id'] ?? $id);
+        $submittedPayload = $_POST;
 
         if ($id > 0 && $action === 'hide') {
             jolie_admin_set_product_active($id, false);
@@ -80,7 +84,22 @@ try {
             exit;
         }
 
-        $savedId = jolie_admin_save_product($id > 0 ? $id : null, $_POST);
+        $uploadErrors = [];
+        $imageUploads = jolie_admin_upload_product_media($_FILES['image_files'] ?? null, 'image', $uploadErrors);
+        $videoUploads = jolie_admin_upload_product_media($_FILES['video_files'] ?? null, 'video', $uploadErrors);
+        $submittedPayload['image_urls'] = jolie_admin_append_media_upload_lines(
+            (string) ($submittedPayload['image_urls'] ?? ''),
+            $imageUploads
+        );
+        $submittedPayload['video_urls'] = jolie_admin_append_media_upload_lines(
+            (string) ($submittedPayload['video_urls'] ?? ''),
+            $videoUploads
+        );
+        if ($uploadErrors) {
+            throw new JolieValidationException($uploadErrors);
+        }
+
+        $savedId = jolie_admin_save_product($id > 0 ? $id : null, $submittedPayload);
         header('Location: product.php?id=' . $savedId . '&saved=1');
         exit;
     }
@@ -95,11 +114,19 @@ try {
 } catch (JolieValidationException $exception) {
     $error = implode(' ', array_values($exception->errors));
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $form = jolie_admin_product_form_from_post($_POST);
+        $form = jolie_admin_product_form_from_post($submittedPayload ?: $_POST);
         $form['id'] = $id > 0 ? $id : null;
     }
 } catch (Throwable $exception) {
     $setupError = jolie_admin_setup_text($exception);
+}
+
+if ($setupError === '' && !$categories) {
+    try {
+        $categories = jolie_product_categories();
+    } catch (Throwable $exception) {
+        $setupError = jolie_admin_setup_text($exception);
+    }
 }
 
 $title = $id > 0 ? 'Modifier produit' : 'Nouveau produit';
@@ -129,7 +156,7 @@ $hasDefaultVariant = array_filter($variantRows, static fn (array $row): bool => 
     <section class="admin-alert is-error"><?= jolie_admin_h($error) ?></section>
   <?php endif; ?>
 
-  <form class="product-edit-layout" method="post" data-product-admin-form>
+  <form class="product-edit-layout" method="post" enctype="multipart/form-data" data-product-admin-form>
     <input type="hidden" name="csrf_token" value="<?= jolie_admin_h(jolie_csrf_token()) ?>" />
     <input type="hidden" name="id" value="<?= jolie_admin_h($form['id'] ?? '') ?>" />
 
@@ -151,10 +178,15 @@ $hasDefaultVariant = array_filter($variantRows, static fn (array $row): bool => 
           <label>
             Categorie
             <select name="category" required data-product-category>
-              <?php foreach (jolie_product_categories() as $category): ?>
+              <?php foreach ($categories as $category): ?>
                 <option value="<?= jolie_admin_h($category) ?>" <?= $form['category'] === $category ? 'selected' : '' ?>><?= jolie_admin_h($category) ?></option>
               <?php endforeach; ?>
+              <option value="__new__" <?= $form['category'] === '__new__' ? 'selected' : '' ?>>+ Nouvelle categorie</option>
             </select>
+          </label>
+          <label data-new-category-field hidden>
+            Nouvelle categorie
+            <input name="new_category" type="text" value="<?= jolie_admin_h($form['new_category'] ?? '') ?>" placeholder="Ex: Bien-etre" data-new-category />
           </label>
           <label>
             Prix principal
@@ -203,19 +235,38 @@ $hasDefaultVariant = array_filter($variantRows, static fn (array $row): bool => 
       <section class="admin-panel product-form-section">
         <div class="panel-head">
           <h2>Images et videos</h2>
-          <span>Une ligne par media</span>
+          <span>Depuis la galerie</span>
         </div>
-        <div class="admin-form-grid">
-          <label>
-            Images
-            <textarea name="image_urls" rows="6" data-media-lines="image" placeholder="assets/products/mon-produit.jpeg | Photo principale"><?= jolie_admin_h($form['image_urls']) ?></textarea>
+        <div class="media-upload-grid">
+          <label class="media-upload-card">
+            <strong>Ajouter des images</strong>
+            <span>JPG, PNG, WebP ou GIF</span>
+            <input name="image_files[]" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-media-upload="image" />
           </label>
-          <label>
-            Videos
-            <textarea name="video_urls" rows="6" data-media-lines="video" placeholder="assets/products/demo-produit.mp4 | Demonstration produit"><?= jolie_admin_h($form['video_urls']) ?></textarea>
+          <label class="media-upload-card">
+            <strong>Ajouter des videos</strong>
+            <span>MP4, WebM, MOV ou M4V</span>
+            <input name="video_files[]" type="file" accept="video/mp4,video/webm,video/quicktime,video/x-m4v" multiple data-media-upload="video" />
           </label>
+        </div>
+        <div class="media-manager-head">
+          <h3>Medias du produit</h3>
+          <span>Les nouveaux fichiers seront ajoutes apres enregistrement</span>
         </div>
         <div class="media-preview-grid" data-media-preview></div>
+        <details class="media-paths-details">
+          <summary>Chemins techniques</summary>
+          <div class="admin-form-grid">
+            <label>
+              Images
+              <textarea name="image_urls" rows="5" data-media-lines="image" placeholder="assets/products/mon-produit.jpeg | Photo principale"><?= jolie_admin_h($form['image_urls']) ?></textarea>
+            </label>
+            <label>
+              Videos
+              <textarea name="video_urls" rows="5" data-media-lines="video" placeholder="assets/products/demo-produit.mp4 | Demonstration produit"><?= jolie_admin_h($form['video_urls']) ?></textarea>
+            </label>
+          </div>
+        </details>
       </section>
 
       <section class="admin-panel product-form-section">

@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="apple-touch-icon" href="../assets/brand/admin-icon-180.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="theme-color" content="#15120f" />
-    <link rel="stylesheet" href="assets/admin.css?v=20260805-phase8" />
+    <link rel="stylesheet" href="assets/admin.css?v=20260805-phase10" />
   </head>
   <body class="admin-login-page">
     <main class="login-card">
@@ -67,6 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit">Se connecter</button>
       </form>
     </main>
-    <script src="assets/admin.js?v=20260805-phase8"></script>
+    <script src="assets/admin.js?v=20260805-phase10"></script>
   </body>
 </html>

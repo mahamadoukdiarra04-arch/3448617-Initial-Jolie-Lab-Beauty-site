@@ -11,6 +11,9 @@ $search = (string) ($_GET['q'] ?? '');
 $products = [];
 $stats = null;
 $setupError = '';
+$notice = '';
+$error = '';
+$categories = [];
 
 function jolie_admin_product_image_src(?string $url): string
 {
@@ -26,12 +29,40 @@ function jolie_admin_product_image_src(?string $url): string
 }
 
 try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        jolie_verify_csrf();
+        $action = (string) ($_POST['action'] ?? '');
+        if ($action === 'create_category') {
+            $categoryName = jolie_admin_create_product_category((string) ($_POST['category_name'] ?? ''));
+            header('Location: products.php?category_created=' . rawurlencode($categoryName));
+            exit;
+        }
+    }
+
+    if (isset($_GET['category_created'])) {
+        $notice = 'Categorie creee : ' . (string) $_GET['category_created'];
+    }
+
+    $categories = jolie_product_categories();
     $stats = jolie_admin_product_stats();
     $products = jolie_admin_list_products([
         'status' => $status,
         'category' => $category,
         'q' => $search,
     ], 150);
+} catch (JolieValidationException $exception) {
+    $error = implode(' ', array_values($exception->errors));
+    try {
+        $categories = jolie_product_categories();
+        $stats = jolie_admin_product_stats();
+        $products = jolie_admin_list_products([
+            'status' => $status,
+            'category' => $category,
+            'q' => $search,
+        ], 150);
+    } catch (Throwable $setupException) {
+        $setupError = jolie_admin_setup_text($setupException);
+    }
 } catch (Throwable $exception) {
     $setupError = jolie_admin_setup_text($exception);
 }
@@ -49,6 +80,13 @@ jolie_admin_page_start('Produits', $user);
 <?php if ($setupError !== ''): ?>
   <section class="admin-alert is-warning"><?= jolie_admin_h($setupError) ?></section>
 <?php else: ?>
+  <?php if ($notice !== ''): ?>
+    <section class="admin-alert is-success"><?= jolie_admin_h($notice) ?></section>
+  <?php endif; ?>
+  <?php if ($error !== ''): ?>
+    <section class="admin-alert is-error"><?= jolie_admin_h($error) ?></section>
+  <?php endif; ?>
+
   <section class="stats-grid product-stats">
     <article><span>Total produits</span><strong><?= jolie_admin_h($stats['total_products'] ?? 0) ?></strong></article>
     <article><span>Publies</span><strong><?= jolie_admin_h($stats['active_products'] ?? 0) ?></strong></article>
@@ -65,7 +103,7 @@ jolie_admin_page_start('Produits', $user);
         Categorie
         <select name="category">
           <option value="">Toutes les categories</option>
-          <?php foreach (jolie_product_categories() as $option): ?>
+          <?php foreach ($categories as $option): ?>
             <option value="<?= jolie_admin_h($option) ?>" <?= $category === $option ? 'selected' : '' ?>><?= jolie_admin_h($option) ?></option>
           <?php endforeach; ?>
         </select>
@@ -80,6 +118,27 @@ jolie_admin_page_start('Produits', $user);
       </label>
       <button type="submit">Filtrer</button>
     </form>
+  </section>
+
+  <section class="admin-panel">
+    <div class="panel-head">
+      <h2>Categories</h2>
+      <span>Creation rapide</span>
+    </div>
+    <form class="category-create-form" method="post">
+      <input type="hidden" name="csrf_token" value="<?= jolie_admin_h(jolie_csrf_token()) ?>" />
+      <input type="hidden" name="action" value="create_category" />
+      <label>
+        Nouvelle categorie
+        <input name="category_name" type="text" placeholder="Ex: Bien-etre" required />
+      </label>
+      <button class="admin-button is-muted" type="submit">Creer la categorie</button>
+    </form>
+    <div class="category-chip-list">
+      <?php foreach ($categories as $option): ?>
+        <span><?= jolie_admin_h($option) ?></span>
+      <?php endforeach; ?>
+    </div>
   </section>
 
   <section class="admin-panel">

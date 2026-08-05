@@ -44,6 +44,42 @@ function adminParseMediaLines(value) {
     .filter((item) => item.url);
 }
 
+function adminMediaLine(item) {
+  if (!item?.url) return "";
+  return item.label ? `${item.url} | ${item.label}` : item.url;
+}
+
+function adminSetMediaLines(textarea, items) {
+  if (!textarea) return;
+  textarea.value = items.map(adminMediaLine).filter(Boolean).join("\n");
+}
+
+function adminFilesFromInput(input) {
+  return input?.files ? Array.from(input.files) : [];
+}
+
+function adminRemoveFileAt(input, removeIndex) {
+  if (!input?.files) return;
+
+  if (typeof DataTransfer === "undefined") {
+    input.value = "";
+    return;
+  }
+
+  const transfer = new DataTransfer();
+  adminFilesFromInput(input).forEach((file, index) => {
+    if (index !== removeIndex) transfer.items.add(file);
+  });
+  input.files = transfer.files;
+}
+
+function adminFileLabel(fileName) {
+  return String(fileName || "")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .trim();
+}
+
 function adminRenumberVariants(list) {
   list.querySelectorAll("[data-variant-row]").forEach((row, index) => {
     const radio = row.querySelector('[name="variant_default"]');
@@ -86,9 +122,13 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   const nameInput = form.querySelector("[data-product-name]");
   const slugInput = form.querySelector("[data-product-slug]");
   const categoryInput = form.querySelector("[data-product-category]");
+  const newCategoryField = form.querySelector("[data-new-category-field]");
+  const newCategoryInput = form.querySelector("[data-new-category]");
   const priceInput = form.querySelector("[data-product-price]");
   const imageLines = form.querySelector('[data-media-lines="image"]');
   const videoLines = form.querySelector('[data-media-lines="video"]');
+  const imageUpload = form.querySelector('[data-media-upload="image"]');
+  const videoUpload = form.querySelector('[data-media-upload="video"]');
   const mediaPreview = form.querySelector("[data-media-preview]");
   const previewImage = form.querySelector("[data-preview-image]");
   const previewName = form.querySelector("[data-preview-name]");
@@ -96,21 +136,62 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   const previewPrice = form.querySelector("[data-preview-price]");
   const variantList = form.querySelector("[data-variant-list]");
 
+  function currentCategoryLabel() {
+    if (categoryInput?.value === "__new__") {
+      return newCategoryInput?.value.trim() || "Nouvelle categorie";
+    }
+    return categoryInput?.value || "Categorie";
+  }
+
+  function updateCategoryMode() {
+    const isNewCategory = categoryInput?.value === "__new__";
+    if (newCategoryField) newCategoryField.hidden = !isNewCategory;
+    if (newCategoryInput) newCategoryInput.required = Boolean(isNewCategory);
+    if (!isNewCategory && newCategoryInput) newCategoryInput.value = "";
+  }
+
   function updateProductPreview() {
     if (previewName) previewName.textContent = nameInput?.value.trim() || "Nom du produit";
-    if (previewCategory) previewCategory.textContent = categoryInput?.value || "Categorie";
+    if (previewCategory) previewCategory.textContent = currentCategoryLabel();
     if (previewPrice) previewPrice.textContent = adminFormatPrice(priceInput?.value);
     const firstImage = adminParseMediaLines(imageLines?.value || "")[0]?.url;
-    if (previewImage) previewImage.src = adminMediaUrl(firstImage || "");
+    const firstPendingImage = adminFilesFromInput(imageUpload)[0];
+    if (previewImage) {
+      previewImage.src = firstImage ? adminMediaUrl(firstImage) : firstPendingImage ? URL.createObjectURL(firstPendingImage) : adminMediaUrl("");
+    }
   }
 
   function updateMediaPreview() {
     if (!mediaPreview) return;
     mediaPreview.innerHTML = "";
 
-    const images = adminParseMediaLines(imageLines?.value || "").map((item) => ({ ...item, type: "image" }));
-    const videos = adminParseMediaLines(videoLines?.value || "").map((item) => ({ ...item, type: "video" }));
-    [...images, ...videos].slice(0, 8).forEach((item) => {
+    const images = adminParseMediaLines(imageLines?.value || "").map((item, index) => ({ ...item, type: "image", source: "stored", index }));
+    const videos = adminParseMediaLines(videoLines?.value || "").map((item, index) => ({ ...item, type: "video", source: "stored", index }));
+    const pendingImages = adminFilesFromInput(imageUpload).map((file, index) => ({
+      type: "image",
+      source: "pending",
+      index,
+      url: URL.createObjectURL(file),
+      label: adminFileLabel(file.name),
+    }));
+    const pendingVideos = adminFilesFromInput(videoUpload).map((file, index) => ({
+      type: "video",
+      source: "pending",
+      index,
+      url: URL.createObjectURL(file),
+      label: adminFileLabel(file.name),
+    }));
+    const mediaItems = [...images, ...videos, ...pendingImages, ...pendingVideos];
+
+    if (!mediaItems.length) {
+      const empty = document.createElement("p");
+      empty.className = "media-empty-state";
+      empty.textContent = "Aucun media ajoute pour le moment.";
+      mediaPreview.appendChild(empty);
+      return;
+    }
+
+    mediaItems.forEach((item) => {
       const card = document.createElement("article");
       card.className = "media-preview-card";
       const media = document.createElement(item.type === "video" ? "video" : "img");
@@ -125,8 +206,18 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
         media.alt = item.label || "Apercu produit";
       }
       const label = document.createElement("span");
-      label.textContent = item.type === "video" ? "Video" : "Image";
-      card.append(media, label);
+      label.textContent = item.source === "pending" ? "A enregistrer" : item.type === "video" ? "Video" : "Image";
+      const name = document.createElement("small");
+      name.textContent = item.label || item.url;
+      const removeButton = document.createElement("button");
+      removeButton.className = "admin-button is-muted";
+      removeButton.type = "button";
+      removeButton.dataset.removeMedia = "";
+      removeButton.dataset.mediaType = item.type;
+      removeButton.dataset.mediaSource = item.source;
+      removeButton.dataset.mediaIndex = String(item.index);
+      removeButton.textContent = "Retirer";
+      card.append(media, label, name, removeButton);
       mediaPreview.appendChild(card);
     });
   }
@@ -137,12 +228,50 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
     }
   });
 
+  categoryInput?.addEventListener("change", () => {
+    updateCategoryMode();
+    updateProductPreview();
+  });
+
+  imageUpload?.addEventListener("change", () => {
+    updateProductPreview();
+    updateMediaPreview();
+  });
+
+  videoUpload?.addEventListener("change", updateMediaPreview);
+
   form.addEventListener("input", () => {
     updateProductPreview();
     updateMediaPreview();
   });
 
   form.addEventListener("click", (event) => {
+    const removeMedia = event.target.closest("[data-remove-media]");
+    if (removeMedia) {
+      const type = removeMedia.dataset.mediaType;
+      const source = removeMedia.dataset.mediaSource;
+      const index = Number(removeMedia.dataset.mediaIndex);
+      if (type === "image" && source === "stored") {
+        const items = adminParseMediaLines(imageLines?.value || "");
+        items.splice(index, 1);
+        adminSetMediaLines(imageLines, items);
+      }
+      if (type === "video" && source === "stored") {
+        const items = adminParseMediaLines(videoLines?.value || "");
+        items.splice(index, 1);
+        adminSetMediaLines(videoLines, items);
+      }
+      if (type === "image" && source === "pending") {
+        adminRemoveFileAt(imageUpload, index);
+      }
+      if (type === "video" && source === "pending") {
+        adminRemoveFileAt(videoUpload, index);
+      }
+      updateProductPreview();
+      updateMediaPreview();
+      return;
+    }
+
     if (event.target.closest("[data-add-variant]") && variantList) {
       adminCreateVariantRow(variantList);
     }
@@ -166,6 +295,7 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   });
 
   if (variantList) adminRenumberVariants(variantList);
+  updateCategoryMode();
   updateProductPreview();
   updateMediaPreview();
 });

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 
-function jolie_product_categories(): array
+function jolie_product_default_categories(): array
 {
     return [
         'Visage',
@@ -37,6 +37,122 @@ function jolie_product_slugify(string $value): string
     $value = trim($value, '-');
 
     return $value !== '' ? $value : 'produit-' . date('YmdHis');
+}
+
+function jolie_admin_clean_product_category_name(string $value): string
+{
+    $value = preg_replace('/\s+/u', ' ', trim($value)) ?? '';
+    return trim($value);
+}
+
+function jolie_admin_ensure_product_categories_table(): void
+{
+    static $ensured = false;
+
+    if ($ensured) {
+        return;
+    }
+
+    $pdo = jolie_pdo();
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS product_categories (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            name VARCHAR(80) NOT NULL,
+            slug VARCHAR(100) NOT NULL,
+            sort_order INT UNSIGNED NOT NULL DEFAULT 9999,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_product_categories_name (name),
+            UNIQUE KEY uq_product_categories_slug (slug),
+            KEY idx_product_categories_sort (sort_order, name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    $insert = $pdo->prepare(
+        'INSERT IGNORE INTO product_categories (name, slug, sort_order)
+        VALUES (:name, :slug, :sort_order)'
+    );
+
+    foreach (jolie_product_default_categories() as $index => $category) {
+        $insert->execute([
+            'name' => $category,
+            'slug' => mb_substr(jolie_product_slugify($category), 0, 100),
+            'sort_order' => ($index + 1) * 10,
+        ]);
+    }
+
+    $ensured = true;
+
+    try {
+        $productCategories = $pdo->query(
+            "SELECT DISTINCT category FROM products WHERE TRIM(category) <> ''"
+        )->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        foreach ($productCategories as $category) {
+            $category = jolie_admin_clean_product_category_name((string) $category);
+            if ($category === '' || mb_strlen($category) > 80) {
+                continue;
+            }
+            jolie_admin_create_product_category($category, 9999);
+        }
+    } catch (Throwable) {
+        // The products table may not exist yet during first setup.
+    }
+}
+
+function jolie_admin_create_product_category(string $name, int $sortOrder = 9999): string
+{
+    $name = jolie_admin_clean_product_category_name($name);
+    if ($name === '') {
+        throw new JolieValidationException(['new_category' => 'Le nom de la categorie est obligatoire.']);
+    }
+    if (mb_strlen($name) > 80) {
+        throw new JolieValidationException(['new_category' => 'Le nom de la categorie est trop long.']);
+    }
+
+    jolie_admin_ensure_product_categories_table();
+    $pdo = jolie_pdo();
+
+    $existing = $pdo->prepare('SELECT name FROM product_categories WHERE name = :name LIMIT 1');
+    $existing->execute(['name' => $name]);
+    $existingName = $existing->fetchColumn();
+    if ($existingName !== false) {
+        return (string) $existingName;
+    }
+
+    $baseSlug = mb_substr(jolie_product_slugify($name), 0, 92);
+    $insert = $pdo->prepare(
+        'INSERT IGNORE INTO product_categories (name, slug, sort_order)
+        VALUES (:name, :slug, :sort_order)'
+    );
+
+    for ($attempt = 0; $attempt < 20; $attempt++) {
+        $suffix = $attempt === 0 ? '' : '-' . ($attempt + 1);
+        $slug = mb_substr($baseSlug . $suffix, 0, 100);
+        $insert->execute([
+            'name' => $name,
+            'slug' => $slug,
+            'sort_order' => $sortOrder,
+        ]);
+
+        $existing->execute(['name' => $name]);
+        $existingName = $existing->fetchColumn();
+        if ($existingName !== false) {
+            return (string) $existingName;
+        }
+    }
+
+    throw new JolieValidationException(['new_category' => "Impossible de creer cette categorie."]);
+}
+
+function jolie_product_categories(): array
+{
+    jolie_admin_ensure_product_categories_table();
+    $rows = jolie_pdo()
+        ->query('SELECT name FROM product_categories ORDER BY sort_order ASC, name ASC')
+        ->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    $categories = array_values(array_filter(array_map('strval', $rows)));
+
+    return $categories ?: jolie_product_default_categories();
 }
 
 function jolie_product_nullable_string(array $source, string $key, int $maxLength = 1000): ?string
@@ -111,6 +227,172 @@ function jolie_product_media_from_text(string $raw, string $type, array &$errors
     return $media;
 }
 
+function jolie_admin_uploaded_files(?array $files): array
+{
+    if (!$files || !isset($files['name'])) {
+        return [];
+    }
+
+    $names = is_array($files['name']) ? $files['name'] : [$files['name']];
+    $types = is_array($files['type'] ?? null) ? $files['type'] : [($files['type'] ?? '')];
+    $tmpNames = is_array($files['tmp_name'] ?? null) ? $files['tmp_name'] : [($files['tmp_name'] ?? '')];
+    $errors = is_array($files['error'] ?? null) ? $files['error'] : [($files['error'] ?? UPLOAD_ERR_NO_FILE)];
+    $sizes = is_array($files['size'] ?? null) ? $files['size'] : [($files['size'] ?? 0)];
+    $items = [];
+    foreach ($names as $index => $name) {
+        $items[] = [
+            'name' => (string) $name,
+            'type' => (string) ($types[$index] ?? ''),
+            'tmp_name' => (string) ($tmpNames[$index] ?? ''),
+            'error' => (int) ($errors[$index] ?? UPLOAD_ERR_NO_FILE),
+            'size' => (int) ($sizes[$index] ?? 0),
+        ];
+    }
+
+    return $items;
+}
+
+function jolie_admin_upload_error_message(int $error): string
+{
+    return match ($error) {
+        UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'Le fichier est trop lourd pour le serveur.',
+        UPLOAD_ERR_PARTIAL => "L'envoi du fichier a ete interrompu.",
+        UPLOAD_ERR_NO_TMP_DIR => 'Le dossier temporaire du serveur est indisponible.',
+        UPLOAD_ERR_CANT_WRITE => "Le serveur n'a pas pu enregistrer le fichier.",
+        UPLOAD_ERR_EXTENSION => "L'envoi du fichier a ete bloque par le serveur.",
+        default => "Le fichier n'a pas pu etre importe.",
+    };
+}
+
+function jolie_admin_media_upload_config(string $type): array
+{
+    if ($type === 'image') {
+        return [
+            'label' => 'image',
+            'max_bytes' => 8 * 1024 * 1024,
+            'mimes' => [
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                'image/gif' => 'gif',
+            ],
+            'extensions' => ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        ];
+    }
+
+    return [
+        'label' => 'video',
+        'max_bytes' => 80 * 1024 * 1024,
+        'mimes' => [
+            'video/mp4' => 'mp4',
+            'video/webm' => 'webm',
+            'video/quicktime' => 'mov',
+            'video/x-m4v' => 'm4v',
+        ],
+        'extensions' => ['mp4', 'webm', 'mov', 'm4v'],
+    ];
+}
+
+function jolie_admin_uploaded_file_mime(string $path): string
+{
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo !== false) {
+            $mime = finfo_file($finfo, $path);
+            finfo_close($finfo);
+            if (is_string($mime) && $mime !== '') {
+                return $mime;
+            }
+        }
+    }
+
+    return function_exists('mime_content_type') ? (string) mime_content_type($path) : '';
+}
+
+function jolie_admin_upload_product_media(?array $files, string $type, array &$errors): array
+{
+    $items = jolie_admin_uploaded_files($files);
+    if (!$items) {
+        return [];
+    }
+
+    $config = jolie_admin_media_upload_config($type);
+    $field = $type === 'image' ? 'image_files' : 'video_files';
+    $activeItems = array_values(array_filter(
+        $items,
+        static fn (array $item): bool => (int) $item['error'] !== UPLOAD_ERR_NO_FILE
+    ));
+    if (count($activeItems) > 8) {
+        $errors[$field] = 'Importez au maximum 8 fichiers a la fois.';
+        return [];
+    }
+
+    $targetDir = dirname(__DIR__) . '/assets/products';
+    if (!is_dir($targetDir) && !mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
+        $errors[$field] = "Le dossier d'upload produit est indisponible.";
+        return [];
+    }
+
+    $uploaded = [];
+    foreach ($activeItems as $index => $item) {
+        $errorKey = "{$field}.{$index}";
+        if ((int) $item['error'] !== UPLOAD_ERR_OK) {
+            $errors[$errorKey] = jolie_admin_upload_error_message((int) $item['error']);
+            continue;
+        }
+        if ((int) $item['size'] <= 0 || (int) $item['size'] > (int) $config['max_bytes']) {
+            $errors[$errorKey] = "Ce fichier {$config['label']} est trop lourd.";
+            continue;
+        }
+
+        $tmpName = (string) $item['tmp_name'];
+        $mime = jolie_admin_uploaded_file_mime($tmpName);
+        $originalExtension = strtolower((string) pathinfo((string) $item['name'], PATHINFO_EXTENSION));
+        $extension = $config['mimes'][$mime] ?? null;
+        if ($extension === null && in_array($originalExtension, $config['extensions'], true)) {
+            $extension = $originalExtension === 'jpeg' ? 'jpg' : $originalExtension;
+        }
+        if ($extension === null) {
+            $errors[$errorKey] = "Format {$config['label']} non accepte.";
+            continue;
+        }
+
+        $fileName = 'admin-' . date('Ymd-His') . '-' . bin2hex(random_bytes(5)) . '.' . $extension;
+        $destination = $targetDir . '/' . $fileName;
+        if (!move_uploaded_file($tmpName, $destination)) {
+            $errors[$errorKey] = "Impossible d'enregistrer ce fichier.";
+            continue;
+        }
+
+        $label = jolie_admin_clean_product_category_name((string) pathinfo((string) $item['name'], PATHINFO_FILENAME));
+        $uploaded[] = [
+            'type' => $type,
+            'url' => 'assets/products/' . $fileName,
+            'label' => mb_substr($label, 0, 120),
+        ];
+    }
+
+    return $uploaded;
+}
+
+function jolie_admin_append_media_upload_lines(string $raw, array $uploads): string
+{
+    $lines = array_values(array_filter(array_map('trim', preg_split('/\R/u', $raw) ?: [])));
+    foreach ($uploads as $upload) {
+        $line = (string) ($upload['url'] ?? '');
+        $label = trim((string) ($upload['label'] ?? ''));
+        if ($line === '') {
+            continue;
+        }
+        if ($label !== '') {
+            $line .= ' | ' . $label;
+        }
+        $lines[] = $line;
+    }
+
+    return implode("\n", $lines);
+}
+
 function jolie_product_variants_from_payload(array $payload, array &$errors): array
 {
     $keys = array_values((array) ($payload['variant_ids'] ?? []));
@@ -171,7 +453,18 @@ function jolie_admin_normalize_product_payload(array $payload): array
     $slugSource = trim((string) ($payload['slug'] ?? '')) ?: $name;
     $slug = mb_substr(jolie_product_slugify($slugSource), 0, 180);
     $category = jolie_product_required_string($payload, 'category', 'La categorie', $errors, 80);
-    if ($category !== '' && !in_array($category, $categories, true)) {
+    $newCategory = jolie_admin_clean_product_category_name((string) ($payload['new_category'] ?? ''));
+    $categoryToCreate = null;
+    if ($newCategory !== '') {
+        if (mb_strlen($newCategory) > 80) {
+            $errors['new_category'] = 'Le nom de la categorie est trop long.';
+        } else {
+            $category = $newCategory;
+            $categoryToCreate = $newCategory;
+        }
+    } elseif ($category === '__new__') {
+        $errors['new_category'] = 'Saisissez le nom de la nouvelle categorie.';
+    } elseif ($category !== '' && !in_array($category, $categories, true)) {
         $errors['category'] = 'La categorie choisie est invalide.';
     }
 
@@ -190,6 +483,9 @@ function jolie_admin_normalize_product_payload(array $payload): array
 
     if ($errors) {
         throw new JolieValidationException($errors);
+    }
+    if ($categoryToCreate !== null) {
+        $category = jolie_admin_create_product_category($categoryToCreate);
     }
 
     return [
@@ -216,6 +512,7 @@ function jolie_admin_product_empty_form(): array
         'name' => '',
         'slug' => '',
         'category' => 'Visage',
+        'new_category' => '',
         'price' => '',
         'price_note' => '',
         'description' => '',
@@ -251,7 +548,7 @@ function jolie_admin_product_media_text(array $product, string $type): string
 function jolie_admin_product_form_from_post(array $payload): array
 {
     $form = jolie_admin_product_empty_form();
-    foreach (['name', 'slug', 'category', 'price', 'price_note', 'description', 'summary', 'usage', 'suited_for', 'sort_order', 'image_urls', 'video_urls'] as $key) {
+    foreach (['name', 'slug', 'category', 'new_category', 'price', 'price_note', 'description', 'summary', 'usage', 'suited_for', 'sort_order', 'image_urls', 'video_urls'] as $key) {
         $form[$key] = (string) ($payload[$key] ?? $form[$key]);
     }
     $form['is_active'] = isset($payload['is_active']) ? 1 : 0;
@@ -285,6 +582,7 @@ function jolie_admin_product_for_form(?array $product): array
         'name' => (string) ($product['name'] ?? ''),
         'slug' => (string) ($product['slug'] ?? ''),
         'category' => (string) ($product['category'] ?? 'Visage'),
+        'new_category' => '',
         'price' => (string) ($product['price'] ?? ''),
         'price_note' => (string) ($product['price_note'] ?? ''),
         'description' => (string) ($product['description'] ?? ''),
