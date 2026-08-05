@@ -456,3 +456,66 @@ Browser mobile 390x844 : accueil, checkout, merci, admin login scrollWidth <= in
 Decision :
 - Passer a la phase suivante : oui, pour la configuration MySQL/serveur
 - Notes : la partie fichiers du deploy Hostinger est valide. La prochaine etape est la configuration backend.
+
+### Phase 08 - Admin mobile et notifications push
+
+Date : 2026-08-05
+Commit : commit de phase 08 `Add admin push notifications`
+Environnement : local `http://127.0.0.1:8780`
+
+Resultat :
+- Statut : `OK avec reserves`
+- Pages/API testees : `admin/login.php`, `admin/manifest.webmanifest`, `admin/sw.js`, `admin/push-key.php`
+- Points valides :
+  - notifications e-mail automatiques retirees du chemin de creation de commande
+  - manifeste PWA admin ajoute pour installation comme icone mobile
+  - icones admin 180, 192 et 512 px generees depuis le logo
+  - service worker admin ajoute pour recevoir les push hors page
+  - endpoint admin `push-key.php` ajoute et protege par connexion
+  - endpoint admin `push-subscription.php` ajoute pour enregistrer ou desactiver un appareil
+  - table `admin_push_subscriptions` ajoutee au schema principal
+  - migration separee `phase-08-push-notifications.sql` ajoutee pour une base existante
+  - outil local `tools/generate_vapid_keys.php` ajoute sans committer de vraie cle
+  - bandeau admin mis a jour avec actions `Installer` et `Activer`
+  - page login admin mobile 390px sans debordement horizontal
+  - fichiers PWA admin servis en `200` localement
+- Points corriges :
+  - ZIP de deploiement ignores par Git pour eviter un push accidentel
+  - service worker durci pour ouvrir une URL absolue au clic notification
+  - ancien chemin mail retire du code actif et de la configuration exemple
+- Points restants :
+  - importer `database/phase-08-push-notifications.sql` sur Hostinger si la base existe deja
+  - generer les cles VAPID et les coller uniquement dans `includes/config.php` sur Hostinger
+  - configurer MySQL/`includes/config.php`, car les API live retournaient encore `503` au dernier controle
+  - tester l'activation push sur le telephone de la cliente depuis l'admin installe en HTTPS
+  - tester une vraie commande live pour confirmer l'arrivee de la notification hors page
+
+Commandes ou controles effectues :
+```text
+php -l includes/notifications.php
+php -l includes/config.example.php
+php -l admin/_bootstrap.php
+php -l admin/login.php
+php -l admin/push-key.php
+php -l admin/push-subscription.php
+php -l tools/generate_vapid_keys.php
+node --check admin/assets/admin.js
+node --check admin/sw.js
+php tools/generate_vapid_keys.php -> VAPID OK, sortie non conservee
+PHP local : jolie_vapid_jwt avec cle generee -> JWT OK
+PHP local : jolie_normalize_push_subscription valide/invalide -> OK
+GET /admin/manifest.webmanifest -> 200
+GET /admin/sw.js -> 200
+GET /assets/brand/admin-icon-180.png -> 200
+GET /assets/brand/admin-icon-192.png -> 200
+GET /assets/brand/admin-icon-512.png -> 200
+GET /admin/push-key.php sans session -> 302 login
+Browser mobile 390x844 : admin/login.php scrollWidth = 390, overflow = false
+rg secrets connus -> aucun resultat
+rg mail actif hors audit historique -> aucun resultat
+git diff --check
+```
+
+Decision :
+- Passer a la phase suivante : oui, apres upload Hostinger et configuration serveur
+- Notes : la notification hors page depend du vrai HTTPS, d'une base MySQL active et de l'autorisation donnee sur le telephone de la cliente.

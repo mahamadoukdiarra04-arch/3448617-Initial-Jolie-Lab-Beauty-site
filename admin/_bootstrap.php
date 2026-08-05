@@ -8,7 +8,7 @@ require_once __DIR__ . '/../includes/admin_products.php';
 
 function jolie_admin_asset(string $path): string
 {
-    return 'assets/' . ltrim($path, '/') . '?v=20260805-phase6';
+    return 'assets/' . ltrim($path, '/') . '?v=20260805-phase8';
 }
 
 function jolie_admin_setup_text(Throwable $error): string
@@ -32,6 +32,9 @@ function jolie_admin_page_start(string $title, ?array $user = null): void
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{$safeTitle} | Admin Jolie Lab Beauty</title>
     <link rel="icon" type="image/png" href="../assets/brand/logo.png" />
+    <link rel="apple-touch-icon" href="../assets/brand/admin-icon-180.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#15120f" />
     <link rel="stylesheet" href="{$GLOBALS['adminCss']}" />
   </head>
   <body class="admin-shell">
@@ -54,10 +57,13 @@ function jolie_admin_page_start(string $title, ?array $user = null): void
     <main class="admin-main">
       <div class="admin-notification-strip" data-admin-notifications hidden>
         <div>
-          <strong>Alertes commandes</strong>
-          <span data-admin-notification-text>Surveille les nouvelles commandes.</span>
+          <strong>Notifications commandes</strong>
+          <span data-admin-notification-text>Activez cet appareil pour recevoir les nouvelles commandes.</span>
         </div>
-        <button class="admin-button is-muted" type="button" data-enable-admin-notifications>Activer</button>
+        <div class="admin-notification-actions">
+          <button class="admin-button is-muted" type="button" data-install-admin-app hidden>Installer</button>
+          <button class="admin-button is-muted" type="button" data-enable-admin-notifications>Activer</button>
+        </div>
       </div>
 HTML;
 }

@@ -286,6 +286,13 @@ a {
   gap: 3px;
 }
 
+.admin-notification-actions {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .admin-notification-strip strong {
   font-size: 0.92rem;
 }
@@ -637,6 +644,11 @@ a {
   .panel-head,
   .admin-notification-strip {
     align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-notification-actions {
+    width: 100%;
     flex-direction: column;
   }
 

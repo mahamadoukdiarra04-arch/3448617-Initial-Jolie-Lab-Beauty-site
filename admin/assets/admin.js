@@ -170,10 +170,108 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   updateMediaPreview();
 });
 
+const jolieAdminServiceWorker = (() => {
+  if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+    return Promise.resolve(null);
+  }
+
+  return navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => null);
+})();
+
+function adminUrlBase64ToUint8Array(value) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const output = new Uint8Array(rawData.length);
+
+  for (let index = 0; index < rawData.length; index += 1) {
+    output[index] = rawData.charCodeAt(index);
+  }
+
+  return output;
+}
+
+function adminSupportsPush() {
+  return (
+    window.isSecureContext &&
+    "Notification" in window &&
+    "PushManager" in window &&
+    "serviceWorker" in navigator
+  );
+}
+
+function adminNotificationLabel() {
+  if (!("Notification" in window)) return "Notifications non disponibles sur ce navigateur.";
+  if (Notification.permission === "denied") return "Notifications bloquees dans les reglages du navigateur.";
+  if (Notification.permission === "granted") return "Notifications actives sur cet appareil.";
+  return "Activez cet appareil pour recevoir les nouvelles commandes.";
+}
+
+async function adminFetchPushPublicKey() {
+  const response = await fetch("push-key.php", {
+    headers: { Accept: "application/json" },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.ok || !payload.publicKey) {
+    throw new Error(payload.message || "Configuration push indisponible.");
+  }
+
+  return payload.publicKey;
+}
+
+async function adminSavePushSubscription(subscription) {
+  const response = await fetch("push-subscription.php", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(subscription.toJSON()),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.message || "Impossible d'enregistrer cet appareil.");
+  }
+
+  return payload;
+}
+
+async function adminEnablePushNotifications() {
+  if (!adminSupportsPush()) {
+    throw new Error("Installez l'admin sur le telephone puis ouvrez-le depuis son icone.");
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    throw new Error("Autorisation de notification refusee.");
+  }
+
+  const [registration, publicKey] = await Promise.all([
+    jolieAdminServiceWorker,
+    adminFetchPushPublicKey(),
+  ]);
+  if (!registration) {
+    throw new Error("Service de notification indisponible.");
+  }
+
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: adminUrlBase64ToUint8Array(publicKey),
+    });
+  }
+
+  await adminSavePushSubscription(subscription);
+  return subscription;
+}
+
 document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
   const enableButton = root.querySelector("[data-enable-admin-notifications]");
+  const installButton = root.querySelector("[data-install-admin-app]");
   const textNode = root.querySelector("[data-admin-notification-text]");
   const storageKey = "jolieAdminLastOrderId";
+  let deferredInstallPrompt = null;
   let lastOrderId = Number(localStorage.getItem(storageKey)) || 0;
   let initialized = false;
 
@@ -185,36 +283,52 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
     return new Intl.NumberFormat("fr-FR").format(Number(value) || 0) + " FCFA";
   }
 
-  function canNotify() {
-    return "Notification" in window && window.isSecureContext;
-  }
-
-  function updatePermissionUi() {
+  function updatePermissionUi(message = "") {
     root.hidden = false;
-    if (!canNotify()) {
+
+    if (installButton) {
+      installButton.hidden = !deferredInstallPrompt;
+    }
+
+    if (!adminSupportsPush()) {
       if (enableButton) enableButton.hidden = true;
-      setText("Alertes visuelles actives. Notifications navigateur disponibles en HTTPS.");
+      setText(message || "Alertes internes actives. Pour les notifications hors page, ouvrez l'admin depuis son icone installee.");
       return;
     }
 
     if (Notification.permission === "granted") {
-      if (enableButton) enableButton.hidden = true;
-      setText("Notifications navigateur actives pour les nouvelles commandes.");
+      if (enableButton) {
+        enableButton.hidden = false;
+        enableButton.textContent = "Synchroniser";
+      }
+      setText(message || "Notifications actives. Ce telephone recevra les nouvelles commandes.");
       return;
     }
 
-    if (enableButton) enableButton.hidden = false;
-    setText("Activez les notifications navigateur pour cet appareil admin.");
+    if (enableButton) {
+      enableButton.hidden = Notification.permission === "denied";
+      enableButton.textContent = "Activer";
+    }
+    setText(message || adminNotificationLabel());
   }
 
-  function showBrowserNotification(order) {
-    if (!canNotify() || Notification.permission !== "granted" || !order) return;
-    const notification = new Notification("Nouvelle commande Jolie Lab Beauty", {
+  async function showBrowserNotification(order) {
+    if (!adminSupportsPush() || Notification.permission !== "granted" || !order) return;
+
+    const notificationOptions = {
       body: `${order.order_number} - ${order.customer_name || "Cliente"} - ${formatPrice(order.products_total)}`,
       tag: `jolie-order-${order.id}`,
       icon: "../assets/brand/logo.png",
-    });
+      data: { url: `order.php?id=${order.id}` },
+    };
 
+    const registration = await jolieAdminServiceWorker;
+    if (registration?.showNotification) {
+      registration.showNotification("Nouvelle commande Jolie Lab Beauty", notificationOptions);
+      return;
+    }
+
+    const notification = new Notification("Nouvelle commande Jolie Lab Beauty", notificationOptions);
     notification.onclick = () => {
       window.focus();
       window.location.href = `order.php?id=${order.id}`;
@@ -241,9 +355,11 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
       const newCount = Number(alerts.new_orders) || 0;
 
       if (newCount > 0) {
-        setText(`${newCount} nouvelle(s) commande(s) en attente.`);
+        setText(`${newCount} nouvelle(s) commande(s) en attente. ${adminNotificationLabel()}`);
+      } else if ("Notification" in window && Notification.permission === "granted") {
+        setText("Aucune nouvelle commande. Notifications actives sur ce telephone.");
       } else {
-        setText("Aucune nouvelle commande pour le moment.");
+        setText("Aucune nouvelle commande pour le moment. Activez les notifications pour cet appareil.");
       }
 
       if (!initialized) {
@@ -258,7 +374,7 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
       if (newOrder && Number(newOrder.id) > lastOrderId) {
         lastOrderId = Number(newOrder.id);
         localStorage.setItem(storageKey, String(lastOrderId));
-        showBrowserNotification(newOrder);
+        showBrowserNotification(newOrder).catch(() => {});
       } else if (latestId > lastOrderId) {
         lastOrderId = latestId;
         localStorage.setItem(storageKey, String(lastOrderId));
@@ -268,13 +384,34 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
     }
   }
 
-  enableButton?.addEventListener("click", async () => {
-    if (!canNotify()) {
-      updatePermissionUi();
-      return;
-    }
-    const permission = await Notification.requestPermission();
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    updatePermissionUi("Vous pouvez installer l'admin sur ce telephone.");
+  });
+
+  installButton?.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice.catch(() => null);
+    deferredInstallPrompt = null;
     updatePermissionUi();
+  });
+
+  enableButton?.addEventListener("click", async () => {
+    if (enableButton) {
+      enableButton.disabled = true;
+      enableButton.textContent = "Activation...";
+    }
+
+    try {
+      await adminEnablePushNotifications();
+      updatePermissionUi("Notifications activees. Les nouvelles commandes seront signalees sur ce telephone.");
+    } catch (error) {
+      updatePermissionUi(error.message || "Impossible d'activer les notifications.");
+    } finally {
+      if (enableButton) enableButton.disabled = false;
+    }
   });
 
   updatePermissionUi();

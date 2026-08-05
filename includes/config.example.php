@@ -13,9 +13,13 @@ return [
         'url' => 'https://jolielabbeauty.com',
     ],
     'notifications' => [
-        'email_enabled' => true,
-        'admin_email' => 'ramatabore31@gmail.com',
-        'from_email' => 'no-reply@jolielabbeauty.com',
-        'from_name' => 'Jolie Lab Beauty',
+        'push_enabled' => true,
+        'vapid_subject' => 'mailto:ramatabore31@gmail.com',
+        'vapid_public_key' => 'GENERATE_WITH_tools_generate_vapid_keys',
+        'vapid_private_key_pem' => <<<'PEM'
+-----BEGIN PRIVATE KEY-----
+GENERATE_WITH_tools_generate_vapid_keys
+-----END PRIVATE KEY-----
+PEM,
     ],
 ];

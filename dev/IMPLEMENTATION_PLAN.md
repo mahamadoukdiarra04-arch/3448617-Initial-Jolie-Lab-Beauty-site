@@ -17,6 +17,9 @@ WhatsApp reste disponible avec la bulle flottante, mais il ne doit plus etre l'e
 - La page merci doit afficher un ticket de caisse stylise avec une animation de check.
 - Les commandes doivent etre visibles dans un espace admin.
 - L'admin doit pouvoir ajouter, modifier, masquer ou retirer les produits.
+- L'admin doit pouvoir etre installe comme icone sur telephone.
+- Les nouvelles commandes doivent declencher des notifications push admin, meme hors page ouverte.
+- Pas de notification e-mail automatique.
 - Le Pixel Meta doit mesurer le tunnel sans declarer un achat paye trop tot.
 
 ## Phases
@@ -28,8 +31,9 @@ WhatsApp reste disponible avec la bulle flottante, mais il ne doit plus etre l'e
 | 03 | Page merci | Confirmation avec numero de commande, ticket de caisse et check anime | Oui |
 | 04 | Admin commandes | Tableau admin prive pour lire et traiter les commandes | Oui |
 | 05 | Admin produits | Gestion produits sans dependance obligatoire a Sanity | Oui |
-| 06 | Notifications et Pixel | Email/push admin + events Meta propres | Oui |
+| 06 | Notifications internes et Pixel | Alertes admin pendant session + events Meta propres | Oui |
 | 07 | Push et deploy | Git propre, deploiement Hostinger, verification live mobile/desktop | Oui |
+| 08 | Admin mobile et Web Push | Admin installable sur telephone + notifications push hors page, sans e-mail | Oui |
 
 ## Regle de progression
 
