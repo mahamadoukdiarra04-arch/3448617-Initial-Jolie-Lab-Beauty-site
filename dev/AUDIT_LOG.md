@@ -410,3 +410,49 @@ Hostinger hPanel : page GIT non connectee, File Manager ouvert puis bloque avant
 Decision :
 - Passer a la phase suivante : non
 - Notes : le code est livre sur GitHub et le paquet deployable est pret, mais la mise en ligne Hostinger doit etre terminee par une action d'upload/FTP ou par la connexion GitHub dans hPanel.
+
+### Phase 07 - Recontrole apres upload manuel
+
+Date : 2026-08-05
+Commit : `06c6421 Document phase 07 deployment status`
+Environnement : live `https://jolielabbeauty.com/`
+
+Resultat :
+- Statut : `OK avec reserves`
+- Pages/API testees : `/`, `index.html`, `checkout.html`, `merci.html`, `pixel-events.js`, `merci.js`, `admin/login.php`, `api/orders/create.php`, `api/products/list.php`
+- Points valides :
+  - `index.html` sert la nouvelle version a la racine
+  - `checkout.html` repond en `200`
+  - `merci.html` repond en `200`
+  - `pixel-events.js` repond en `200`
+  - `merci.js` repond en `200`
+  - `admin/login.php` repond en `200`
+  - le ZIP de release n'est plus accessible en public
+  - le sous-dossier `public_html/public_html` cree par erreur n'est plus accessible en public
+  - mobile 390px sans debordement horizontal sur accueil, checkout, merci et login admin
+- Points corriges :
+  - fichiers deployes au bon niveau apres deplacement du contenu extrait
+- Points restants :
+  - `api/products/list.php` retourne `503`
+  - `api/orders/create.php` retourne `503` avec payload valide
+  - finir `includes/config.php` et la base MySQL Hostinger pour enregistrer les commandes et gerer les produits
+
+Commandes ou controles effectues :
+```text
+GET https://jolielabbeauty.com/ -> 200
+GET https://jolielabbeauty.com/index.html -> 200
+GET https://jolielabbeauty.com/checkout.html -> 200
+GET https://jolielabbeauty.com/merci.html -> 200
+GET https://jolielabbeauty.com/pixel-events.js -> 200
+GET https://jolielabbeauty.com/merci.js?v=20260805-phase6 -> 200
+GET https://jolielabbeauty.com/admin/login.php -> 200
+GET https://jolielabbeauty.com/jolie-lab-release-20260805-072037.zip -> 404
+GET https://jolielabbeauty.com/public_html/merci.html -> 404
+GET https://jolielabbeauty.com/api/products/list.php -> 503
+POST https://jolielabbeauty.com/api/orders/create.php avec payload valide -> 503
+Browser mobile 390x844 : accueil, checkout, merci, admin login scrollWidth <= innerWidth
+```
+
+Decision :
+- Passer a la phase suivante : oui, pour la configuration MySQL/serveur
+- Notes : la partie fichiers du deploy Hostinger est valide. La prochaine etape est la configuration backend.

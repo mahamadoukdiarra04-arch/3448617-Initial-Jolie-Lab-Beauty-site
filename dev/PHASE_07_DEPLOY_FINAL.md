@@ -80,3 +80,17 @@ Suite recommandee :
 - extraire l'archive dans `public_html` sans supprimer une eventuelle configuration serveur non versionnee ;
 - importer le schema SQL ou la migration produits selon l'etat de la base ;
 - verifier ensuite le site public, `merci.html`, `pixel-events.js`, `admin/login.php`, une commande test et le mobile.
+
+## Recontrole apres upload manuel du 2026-08-05
+
+Etat atteint :
+- fichiers extraits au bon emplacement `public_html` ;
+- `https://jolielabbeauty.com/` et `index.html` servent la nouvelle version ;
+- `checkout.html`, `merci.html`, `pixel-events.js`, `merci.js` et `admin/login.php` repondent en `200` ;
+- l'archive ZIP et le sous-dossier extrait par erreur ne sont plus accessibles en public ;
+- verification mobile 390px OK sur accueil, checkout, merci et login admin.
+
+Reserve :
+- `api/products/list.php` retourne encore `503` ;
+- `api/orders/create.php` retourne encore `503` avec un payload valide ;
+- la configuration serveur/MySQL doit encore etre terminee pour enregistrer les commandes et administrer les produits.
