@@ -357,3 +357,56 @@ git diff --check
 Decision :
 - Passer a la phase suivante : oui
 - Notes : reserve attendue, car l'envoi email et le polling admin complet demandent une base MySQL Hostinger configuree.
+
+### Phase 07 - Push et deploy final
+
+Date : 2026-08-05
+Commit : `d42ac71 Build order admin and checkout flow`
+Environnement : local `http://127.0.0.1:8770`, GitHub `main`, live `https://jolielabbeauty.com/`
+
+Resultat :
+- Statut : `Bloque`
+- Pages testees : `index.html`, `checkout.html`, `merci.html`, `produit.html`, `admin/login.php`, live `/`, live `/merci.html`, live `/pixel-events.js`, live `/admin/login.php`
+- Points valides :
+  - validation PHP locale OK sur les fichiers `admin`, `api`, `includes` et `tools`
+  - validation JavaScript locale OK sur les scripts publics et admin
+  - aucun secret Hostinger connu trouve dans le repo
+  - aucun event Pixel `Purchase` actif hors documentation
+  - parcours mobile local OK : ajout panier, checkout, redirection merci, numero de commande affiche
+  - largeur mobile 390px OK sur accueil, checkout, merci, fiche produit et login admin
+  - commit final cree
+  - push GitHub effectue sur `main`
+  - archive Hostinger preparee et verifiee
+- Points corriges :
+  - aucun correctif applicatif necessaire pendant cette phase
+- Points restants :
+  - le live Hostinger sert encore l'ancienne version apres push GitHub
+  - `/merci.html`, `/pixel-events.js` et `/admin/login.php` retournent encore `404` en live
+  - GIT Hostinger demande encore une connexion OAuth GitHub
+  - upload File Manager non termine depuis le navigateur integre, acces Hostinger/File Browser bloque
+  - deploy final a faire via File Manager, FTP/SFTP ou connexion GitHub Hostinger
+  - importer/configurer MySQL Hostinger pour tester une vraie commande en base
+
+Commandes ou controles effectues :
+```text
+git status --short --branch
+git log -1 --oneline
+php -l sur admin, api, includes, tools
+node --check catalog-source.js script.js product-detail.js product-page.js checkout.js merci.js pixel-events.js admin/assets/admin.js
+git diff --check
+rg -n "secrets hostinger connus" . -> aucune occurrence
+rg -n "Purchase" --glob "!dev/**" --glob "!sanity-studio/node_modules/**" . -> aucune occurrence active
+Playwright Chrome local mobile 390px : index -> panier -> checkout -> merci
+curl live / -> 200 mais ancienne version
+curl live /merci.html -> 404
+curl live /pixel-events.js -> 404
+curl live /admin/login.php -> 404
+git archive d42ac71 -> jolie-lab-release-20260805-072037.zip
+verification archive : admin/api/includes/merci/pixel presents, dev/database/sanity-studio exclus
+git push origin main -> OK
+Hostinger hPanel : page GIT non connectee, File Manager ouvert puis bloque avant upload final
+```
+
+Decision :
+- Passer a la phase suivante : non
+- Notes : le code est livre sur GitHub et le paquet deployable est pret, mais la mise en ligne Hostinger doit etre terminee par une action d'upload/FTP ou par la connexion GitHub dans hPanel.

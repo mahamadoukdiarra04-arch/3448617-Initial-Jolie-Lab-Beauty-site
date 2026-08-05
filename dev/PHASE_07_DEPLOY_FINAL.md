@@ -59,3 +59,24 @@ Rollback possible :
 - Pixel actif.
 - Git push effectue.
 - Deploiement Hostinger verifie.
+
+## Execution du 2026-08-05
+
+Etat atteint :
+- validation locale OK ;
+- commit Git cree : `d42ac71 Build order admin and checkout flow` ;
+- push GitHub effectue sur `main` ;
+- archive Hostinger preparee : `jolie-lab-release-20260805-072037.zip` ;
+- archive verifiee : admin, API, includes, merci et pixel presents ; dossiers `dev`, `database`, `sanity-studio` exclus.
+
+Blocage :
+- le domaine live `https://jolielabbeauty.com/` sert encore l'ancienne version ;
+- `merci.html`, `pixel-events.js` et `admin/login.php` retournent encore `404` en live ;
+- la page GIT Hostinger n'est pas connectee a GitHub ;
+- l'upload via File Manager n'a pas pu etre termine depuis le navigateur integre a cause du blocage d'acces Hostinger/File Browser.
+
+Suite recommandee :
+- finaliser le deploy via Hostinger File Manager, FTP/SFTP, ou connecter GitHub via OAuth Hostinger ;
+- extraire l'archive dans `public_html` sans supprimer une eventuelle configuration serveur non versionnee ;
+- importer le schema SQL ou la migration produits selon l'etat de la base ;
+- verifier ensuite le site public, `merci.html`, `pixel-events.js`, `admin/login.php`, une commande test et le mobile.
