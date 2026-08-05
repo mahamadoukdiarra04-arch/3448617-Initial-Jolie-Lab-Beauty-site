@@ -1,4 +1,6 @@
 (function () {
+  const ADMIN_PRODUCTS_ENDPOINT = "api/products/list.php";
+
   const SANITY_PRODUCTS_QUERY = `*[_type == "product" && coalesce(isActive, true)] | order(coalesce(sortOrder, 9999) asc, name asc) {
     _id,
     productId,
@@ -19,6 +21,11 @@
   function hasSanityConfig() {
     const config = window.JOLIE_SANITY || {};
     return Boolean(config.projectId && config.dataset && config.apiVersion);
+  }
+
+  function isLocalDevelopmentHost() {
+    const host = window.location.hostname;
+    return !host || host === "localhost" || host === "127.0.0.1" || host === "::1";
   }
 
   function normalizeImage(image) {
@@ -59,6 +66,7 @@
       summary: product.summary || summaryFromDescription(product.description || name),
       usage: product.usage || "",
       suitedFor: product.suitedFor || "",
+      sortOrder: Number(product.sortOrder) || index + 1,
       variants: Array.isArray(product.variants)
         ? product.variants
             .filter((variant) => variant?.name && Number(variant?.price) > 0)
@@ -102,8 +110,64 @@
     return Array.isArray(payload.result) ? payload.result : [];
   }
 
-  async function loadProducts(fallbackProducts = window.JOLIE_PRODUCTS || []) {
-    const fallback = (fallbackProducts || []).map(normalizeProduct);
+  function canUseAdminProducts() {
+    return window.location.protocol === "http:" || window.location.protocol === "https:";
+  }
+
+  async function fetchAdminProducts() {
+    const response = await fetch(ADMIN_PRODUCTS_ENDPOINT, { headers: { Accept: "application/json" } });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.message || `Admin catalogue returned ${response.status}`);
+    }
+    return {
+      products: Array.isArray(payload.products) ? payload.products : [],
+      hiddenProducts: Array.isArray(payload.hiddenProducts) ? payload.hiddenProducts : [],
+    };
+  }
+
+  function productKeys(product) {
+    return [product.id, product.productId, product._id, product.slug]
+      .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+      .map((value) => String(value));
+  }
+
+  function mergeAdminProducts(baseProducts, adminProducts, hiddenProducts) {
+    const hiddenKeys = new Set(hiddenProducts.flatMap(productKeys));
+    const merged = [];
+    const indexByKey = new Map();
+
+    baseProducts.forEach((product) => {
+      const keys = productKeys(product);
+      if (keys.some((key) => hiddenKeys.has(key))) return;
+      indexByKey.set(String(product.id), merged.length);
+      if (product.slug) indexByKey.set(String(product.slug), merged.length);
+      merged.push(product);
+    });
+
+    adminProducts
+      .slice()
+      .sort((first, second) => (Number(first.sortOrder) || 9999) - (Number(second.sortOrder) || 9999))
+      .forEach((product) => {
+        const keys = productKeys(product);
+        if (keys.some((key) => hiddenKeys.has(key))) return;
+        const existingIndex = keys.map((key) => indexByKey.get(key)).find((index) => index !== undefined);
+
+        if (existingIndex !== undefined) {
+          merged[existingIndex] = product;
+          keys.forEach((key) => indexByKey.set(key, existingIndex));
+          return;
+        }
+
+        keys.forEach((key) => indexByKey.set(key, merged.length));
+        merged.push(product);
+      });
+
+    return merged;
+  }
+
+  async function loadBaseProducts(fallback) {
+    if (isLocalDevelopmentHost()) return fallback;
     if (!hasSanityConfig()) return fallback;
     try {
       const products = await fetchSanityProducts();
@@ -113,6 +177,27 @@
       console.warn("Sanity products unavailable, using local catalogue.", error);
       return fallback;
     }
+  }
+
+  async function loadProducts(fallbackProducts = window.JOLIE_PRODUCTS || []) {
+    const fallback = (fallbackProducts || []).map(normalizeProduct);
+    const baseProducts = await loadBaseProducts(fallback);
+
+    if (canUseAdminProducts()) {
+      try {
+        const adminPayload = await fetchAdminProducts();
+        const normalizedAdminProducts = adminPayload.products.map(normalizeProduct).filter((product) => product.name);
+        const normalizedHiddenProducts = adminPayload.hiddenProducts.map((product) => ({
+          id: product.id || product.productId || product._id || "",
+          slug: product.slug || "",
+        }));
+        return mergeAdminProducts(baseProducts, normalizedAdminProducts, normalizedHiddenProducts);
+      } catch (error) {
+        console.warn("Admin products unavailable, using catalogue fallback.", error);
+      }
+    }
+
+    return baseProducts;
   }
 
   window.JolieCatalog = {

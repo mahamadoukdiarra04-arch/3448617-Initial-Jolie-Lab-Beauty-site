@@ -31,7 +31,7 @@
         "email": "ramatabore31@gmail.com",
         "telephone": "+22394307799",
         "areaServed": ["Bamako", "International"],
-        "paymentAccepted": ["Paiement à la livraison", "Orange Money", "Moov Money", "Wave"]
+        "paymentAccepted": ["Paiement à la livraison"]
       }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -40,7 +40,7 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260730-video" />
+    <link rel="stylesheet" href="styles.css?v=20260805-phase3" />
     <!-- Meta Pixel Code -->
     <script>
       !function(f,b,e,v,n,t,s)
@@ -103,16 +103,16 @@
           </p>
           <div class="hero-actions">
             <a class="button button-primary" href="#boutique">Voir la boutique</a>
-            <a class="button button-ghost" href="https://wa.me/22394307799" target="_blank" rel="noreferrer">
-              Commander WhatsApp
+            <a class="button button-ghost" href="checkout.html">
+              Passer commande
             </a>
           </div>
         </div>
         <div class="hero-strip" aria-label="Services Jolie Lab Beauty">
           <span>Paiement à la livraison</span>
-          <span>Orange Money</span>
-          <span>Moov Money</span>
-          <span>Wave</span>
+          <span>Livraison à déterminer</span>
+          <span>Commande sur le site</span>
+          <span>WhatsApp disponible</span>
           <span>Bamako & international</span>
         </div>
       </section>
@@ -142,7 +142,7 @@
             <p>
               Jolie Lab Beauty aide à choisir des produits adaptés aux besoins du moment :
               imperfections, éclat du teint, hydratation, soin capillaire, accessoires beauté
-              ou packs complets à commander facilement sur WhatsApp.
+              ou packs complets à commander facilement sur le site.
             </p>
           </div>
         </div>
@@ -167,7 +167,7 @@
           <span class="mini-label">Catalogue</span>
           <div>
             <h2>Boutique cosmétique Jolie Lab</h2>
-            <p>Recherchez un soin, filtrez par catégorie, ajoutez au panier puis envoyez votre commande sur WhatsApp.</p>
+            <p>Recherchez un soin, filtrez par catégorie, ajoutez au panier puis passez commande directement sur le site.</p>
           </div>
         </div>
 
@@ -216,10 +216,10 @@
           </article>
           <article>
             <span class="mini-label">Paiement</span>
-            <h3>Flexible et simple</h3>
+            <h3>Paiement à la livraison</h3>
             <p>
-              Paiement à la livraison, Orange Money, Moov Money et Wave. Le paiement en ligne pourra
-              être ajouté plus tard si la boutique évolue vers une solution e-commerce complète.
+              La cliente règle sa commande à la livraison. Le prix de livraison est déterminé après
+              vérification de la zone et communiqué avant confirmation finale.
             </p>
           </article>
           <article>
@@ -269,11 +269,11 @@
           <div class="faq-list">
             <details>
               <summary>Comment passer commande ?</summary>
-              <p>Ajoutez vos produits au panier, renseignez vos informations puis envoyez la commande sur WhatsApp.</p>
+              <p>Ajoutez vos produits au panier, renseignez vos informations puis passez commande sur le site.</p>
             </details>
             <details>
               <summary>Quels paiements sont disponibles ?</summary>
-              <p>Paiement à la livraison, Orange Money, Moov Money et Wave sont proposés pour le lancement.</p>
+              <p>Le paiement se fait à la livraison. Le prix de livraison est communiqué après validation de la commande.</p>
             </details>
             <details>
               <summary>Livrez-vous hors de Bamako ?</summary>
@@ -281,7 +281,7 @@
             </details>
             <details>
               <summary>Les prix peuvent-ils changer ?</summary>
-              <p>Les prix affichés servent de référence catalogue. La disponibilité est confirmée sur WhatsApp.</p>
+              <p>Les prix affichés servent de référence catalogue. La disponibilité et la livraison sont confirmées après la commande.</p>
             </details>
           </div>
         </div>
@@ -316,7 +316,7 @@
 
         <p class="drawer-intro">
           Vérifiez votre sélection ici. La finalisation se fait ensuite sur une page claire avec vos coordonnées,
-          la zone de livraison et le moyen de paiement.
+          la zone de livraison et le paiement à la livraison.
         </p>
 
         <div class="cart-items" data-cart-items></div>
@@ -328,8 +328,8 @@
 
         <div class="drawer-reassurance">
           <span>Quantités modifiables</span>
-          <span>Livraison confirmée avant envoi</span>
-          <span>Commande WhatsApp préparée</span>
+          <span>Livraison à déterminer</span>
+          <span>Commande sur le site</span>
         </div>
 
         <div class="drawer-actions">
@@ -370,11 +370,11 @@
             </article>
             <article>
               <h3>Livraison & paiement</h3>
-              <p>Livraison à Bamako et à l'international. Paiement à la livraison, Orange Money, Moov Money ou Wave.</p>
+              <p>Livraison à Bamako et à l'international. Paiement à la livraison, frais de livraison confirmés après commande.</p>
             </article>
           </div>
           <div class="modal-assurance">
-            <span>Commande WhatsApp</span>
+            <span>Commande sur le site</span>
             <span>Prix confirmé avant livraison</span>
             <span>Photos produit disponibles</span>
           </div>
@@ -415,7 +415,8 @@
 
     <script src="data/products.js?v=20260512-sanity"></script>
     <script src="data/sanity-config.js?v=20260512-sanity"></script>
-    <script src="catalog-source.js?v=20260730-video"></script>
-    <script src="script.js?v=20260730-corps-visage"></script>
+    <script src="catalog-source.js?v=20260805-phase5"></script>
+    <script src="pixel-events.js?v=20260805-phase6"></script>
+    <script src="script.js?v=20260805-phase6"></script>
   </body>
 </html>

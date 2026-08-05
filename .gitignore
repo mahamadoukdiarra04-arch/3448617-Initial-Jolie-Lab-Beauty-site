@@ -1,7 +1,9 @@
 .vercel
 local-server*.log
+local-php-server*.log
 node_modules
 .env
 .env.*
 .sanity
 dist
+includes/config.php

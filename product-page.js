@@ -41,6 +41,33 @@ function lineName(product, variant) {
   return variant ? `${product.name} - ${variant.name}` : product.name;
 }
 
+function linePrice(product, variant) {
+  return Number(variant ? variant.price : product.price) || 0;
+}
+
+function trackPixelAddToCart(product, variant) {
+  const price = linePrice(product, variant);
+  const contentId = window.JoliePixel?.contentId(product, variant) || String(product.id);
+  if (window.JoliePixel) {
+    window.JoliePixel.track("AddToCart", {
+      content_ids: [contentId],
+      content_name: lineName(product, variant),
+      content_type: "product",
+      contents: [{ id: contentId, quantity: 1, item_price: price }],
+      currency: "XOF",
+      value: price,
+    });
+  } else if (typeof window.fbq === "function") {
+    window.fbq("track", "AddToCart", {
+      content_ids: [contentId],
+      content_name: lineName(product, variant),
+      content_type: "product",
+      currency: "XOF",
+      value: price,
+    });
+  }
+}
+
 function loadCart() {
   try {
     return normalizeCart(JSON.parse(localStorage.getItem("jolieLabCart")) || {});
@@ -81,6 +108,7 @@ function addCurrentProduct() {
   cart[key] = (cart[key] || 0) + 1;
   saveCart(cart);
   updateCartCount();
+  trackPixelAddToCart(currentProduct, variant);
   if (feedback) {
     feedback.innerHTML = `${lineName(currentProduct, variant)} a été ajouté au panier. <a href="../checkout.html">Finaliser la commande</a>`;
   }

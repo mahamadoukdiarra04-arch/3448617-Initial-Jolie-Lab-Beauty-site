@@ -107,6 +107,23 @@ function lineName(product, variant) {
   return variant ? `${product.name} - ${variant.name}` : product.name;
 }
 
+function linePrice(product, variant) {
+  return Number(variant ? variant.price : product.price) || 0;
+}
+
+function trackPixelAddToCart(product, variant) {
+  const price = linePrice(product, variant);
+  const contentId = window.JoliePixel?.contentId(product, variant) || String(product.id);
+  window.JoliePixel?.track("AddToCart", {
+    content_ids: [contentId],
+    content_name: lineName(product, variant),
+    content_type: "product",
+    contents: [{ id: contentId, quantity: 1, item_price: price }],
+    currency: "XOF",
+    value: price,
+  });
+}
+
 function productPriceLabel(product) {
   if (Array.isArray(product.variants) && product.variants.length) {
     return product.variants.map((variant) => `${variant.name} ${formatPrice(variant.price)}`).join(" • ");
@@ -226,7 +243,7 @@ function renderProduct(product) {
           </article>
           <article>
             <h2>Livraison & paiement</h2>
-            <p>Livraison à Bamako et à l'international. Paiement à la livraison, Orange Money, Moov Money ou Wave.</p>
+            <p>Livraison à Bamako et à l'international. Paiement à la livraison. Frais de livraison confirmés après validation de la commande.</p>
           </article>
         </section>
       </article>
@@ -279,6 +296,7 @@ function addCurrentProduct() {
   cart[key] = (cart[key] || 0) + 1;
   saveCart(cart);
   updateCartCount();
+  trackPixelAddToCart(currentProduct, variant);
   if (feedback) {
     feedback.innerHTML = `${escapeHtml(lineName(currentProduct, variant))} a été ajouté au panier. <a href="checkout.html">Finaliser la commande</a>`;
   }

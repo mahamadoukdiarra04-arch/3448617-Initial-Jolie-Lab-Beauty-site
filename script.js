@@ -310,6 +310,19 @@ function linePrice(product, variant) {
   return variant ? variant.price : product.price;
 }
 
+function trackPixelAddToCart(product, variant) {
+  const price = Number(linePrice(product, variant)) || 0;
+  const contentId = window.JoliePixel?.contentId(product, variant) || String(product.id);
+  window.JoliePixel?.track("AddToCart", {
+    content_ids: [contentId],
+    content_name: lineName(product, variant),
+    content_type: "product",
+    contents: [{ id: contentId, quantity: 1, item_price: price }],
+    currency: "XOF",
+    value: price,
+  });
+}
+
 function productPriceLabel(product) {
   if (Array.isArray(product.variants) && product.variants.length) {
     return product.variants.map((variant) => `${variant.name} ${formatPrice(variant.price)}`).join(" • ");
@@ -583,6 +596,7 @@ function addToCart(id, variantId = "") {
   const key = cartKey(product.id, variant?.id);
   state.cart[key] = (state.cart[key] || 0) + 1;
   renderCart();
+  trackPixelAddToCart(product, variant);
   return { ok: true, product, variant };
 }
 

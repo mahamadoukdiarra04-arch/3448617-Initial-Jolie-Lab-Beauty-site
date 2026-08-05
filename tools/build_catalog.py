@@ -466,7 +466,7 @@ def render_page(product: dict, products: list[dict], logo_path: str | None) -> s
             </article>
             <article>
               <h2>Livraison & paiement</h2>
-              <p>Livraison à Bamako et à l'international. Paiement à la livraison, Orange Money, Moov Money ou Wave.</p>
+              <p>Livraison à Bamako et à l'international. Paiement à la livraison. Frais de livraison confirmés après validation de la commande.</p>
             </article>
           </section>
         </article>
@@ -486,7 +486,7 @@ def render_page(product: dict, products: list[dict], logo_path: str | None) -> s
 
     <a class="floating-whatsapp" href="https://wa.me/22394307799" target="_blank" rel="noreferrer" aria-label="Contacter Jolie Lab Beauty sur WhatsApp">WhatsApp</a>
     <script src="../data/products.js"></script>
-    <script src="../product-page.js"></script>
+    <script src="../product-page.js?v=20260805-phase6"></script>
   </body>
 </html>
 """
