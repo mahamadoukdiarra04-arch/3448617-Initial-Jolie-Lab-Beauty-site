@@ -300,12 +300,35 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   updateMediaPreview();
 });
 
+function adminWithTimeout(promise, duration, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), duration);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timeoutId));
+}
+
+function adminIsIosDevice() {
+  const platform = navigator.platform || "";
+  const agent = navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(agent) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function adminIsStandaloneApp() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
 const jolieAdminServiceWorker = (() => {
   if (!("serviceWorker" in navigator) || !window.isSecureContext) {
     return Promise.resolve(null);
   }
 
-  return navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => null);
+  return adminWithTimeout(
+    navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => null),
+    12000,
+    "Service de notification trop lent. Rechargez la page puis reessayez."
+  ).catch(() => null);
 })();
 
 function adminUrlBase64ToUint8Array(value) {
@@ -338,9 +361,13 @@ function adminNotificationLabel() {
 }
 
 async function adminFetchPushPublicKey() {
-  const response = await fetch("push-key.php", {
-    headers: { Accept: "application/json" },
-  });
+  const response = await adminWithTimeout(
+    fetch("push-key.php", {
+      headers: { Accept: "application/json" },
+    }),
+    12000,
+    "Verification serveur trop lente. Verifiez la connexion puis reessayez."
+  );
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || !payload.ok || !payload.publicKey) {
     throw new Error(payload.message || "Configuration push indisponible.");
@@ -350,14 +377,18 @@ async function adminFetchPushPublicKey() {
 }
 
 async function adminSavePushSubscription(subscription) {
-  const response = await fetch("push-subscription.php", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(subscription.toJSON()),
-  });
+  const response = await adminWithTimeout(
+    fetch("push-subscription.php", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(subscription.toJSON()),
+    }),
+    12000,
+    "Enregistrement de cet appareil trop lent. Reessayez dans quelques secondes."
+  );
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || !payload.ok) {
     throw new Error(payload.message || "Impossible d'enregistrer cet appareil.");
@@ -367,11 +398,19 @@ async function adminSavePushSubscription(subscription) {
 }
 
 async function adminEnablePushNotifications() {
-  if (!adminSupportsPush()) {
-    throw new Error("Installez l'admin sur le telephone puis ouvrez-le depuis son icone.");
+  if (adminIsIosDevice() && !adminIsStandaloneApp()) {
+    throw new Error("Sur iPhone, ajoutez d'abord l'admin a l'ecran d'accueil, puis ouvrez l'icone Jolie Admin.");
   }
 
-  const permission = await Notification.requestPermission();
+  if (!adminSupportsPush()) {
+    throw new Error(adminIsIosDevice() ? "Mettez l'iPhone a jour puis ouvrez l'admin depuis son icone." : "Ce navigateur ne supporte pas les notifications push.");
+  }
+
+  const permission = await adminWithTimeout(
+    Notification.requestPermission(),
+    30000,
+    "Autorisation non validee. Touchez Autoriser quand la demande du navigateur apparait."
+  );
   if (permission !== "granted") {
     throw new Error("Autorisation de notification refusee.");
   }
@@ -386,19 +425,49 @@ async function adminEnablePushNotifications() {
 
   let subscription = await registration.pushManager.getSubscription();
   if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: adminUrlBase64ToUint8Array(publicKey),
-    });
+    subscription = await adminWithTimeout(
+      registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: adminUrlBase64ToUint8Array(publicKey),
+      }),
+      20000,
+      "Creation de l'abonnement trop lente. Rechargez l'admin puis reessayez."
+    );
   }
 
   await adminSavePushSubscription(subscription);
   return subscription;
 }
 
+async function adminShowTestNotification() {
+  if (!adminSupportsPush() || Notification.permission !== "granted") {
+    throw new Error("Autorisez d'abord les notifications sur cet appareil.");
+  }
+
+  const notificationOptions = {
+    body: "Test reussi. Cet appareil peut afficher les notifications Jolie Lab Beauty.",
+    tag: "jolie-admin-test",
+    icon: "../assets/brand/logo.png",
+    data: { url: "index.php" },
+  };
+  const registration = await jolieAdminServiceWorker;
+  if (registration?.showNotification) {
+    await registration.showNotification("Notification test Jolie Lab", notificationOptions);
+    return;
+  }
+
+  const notification = new Notification("Notification test Jolie Lab", notificationOptions);
+  notification.onclick = () => {
+    window.focus();
+    window.location.href = "index.php";
+  };
+}
+
 document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
   const enableButton = root.querySelector("[data-enable-admin-notifications]");
   const installButton = root.querySelector("[data-install-admin-app]");
+  const iosHelpButton = root.querySelector("[data-ios-install-help]");
+  const testButton = root.querySelector("[data-test-admin-notification]");
   const textNode = root.querySelector("[data-admin-notification-text]");
   const storageKey = "jolieAdminLastOrderId";
   let deferredInstallPrompt = null;
@@ -415,14 +484,31 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
 
   function updatePermissionUi(message = "") {
     root.hidden = false;
+    const isIos = adminIsIosDevice();
+    const isStandalone = adminIsStandaloneApp();
 
     if (installButton) {
       installButton.hidden = !deferredInstallPrompt;
+      if (!installButton.disabled) installButton.textContent = "Installer";
+    }
+
+    if (iosHelpButton) {
+      iosHelpButton.hidden = !(isIos && !isStandalone);
+    }
+
+    if (testButton) {
+      testButton.hidden = !adminSupportsPush() || !("Notification" in window) || Notification.permission !== "granted";
+    }
+
+    if (isIos && !isStandalone) {
+      if (enableButton) enableButton.hidden = true;
+      setText(message || "iPhone detecte : ajoutez l'admin a l'ecran d'accueil, ouvrez l'icone Jolie Admin, puis autorisez les notifications.");
+      return;
     }
 
     if (!adminSupportsPush()) {
       if (enableButton) enableButton.hidden = true;
-      setText(message || "Alertes internes actives. Pour les notifications hors page, ouvrez l'admin depuis son icone installee.");
+      setText(message || "Alertes internes actives. Les notifications hors page ne sont pas disponibles sur ce navigateur.");
       return;
     }
 
@@ -431,15 +517,47 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
         enableButton.hidden = false;
         enableButton.textContent = "Synchroniser";
       }
-      setText(message || "Notifications actives. Ce telephone recevra les nouvelles commandes.");
+      setText(message || "Notifications actives. Cet appareil recevra les nouvelles commandes, meme hors de l'admin.");
       return;
     }
 
     if (enableButton) {
       enableButton.hidden = Notification.permission === "denied";
-      enableButton.textContent = "Activer";
+      enableButton.textContent = "Autoriser";
     }
     setText(message || adminNotificationLabel());
+  }
+
+  function showIosInstallGuide() {
+    let panel = document.querySelector("[data-ios-install-guide]");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.className = "admin-notification-guide";
+      panel.setAttribute("data-ios-install-guide", "");
+      panel.setAttribute("role", "dialog");
+      panel.setAttribute("aria-modal", "true");
+      panel.innerHTML = `
+        <div class="admin-notification-guide-card">
+          <button class="admin-guide-close" type="button" data-close-ios-guide aria-label="Fermer">x</button>
+          <strong>Activer les notifications sur iPhone</strong>
+          <ol>
+            <li>Ouvrez cette page admin dans Safari.</li>
+            <li>Touchez le bouton Partager.</li>
+            <li>Choisissez Ajouter a l'ecran d'accueil.</li>
+            <li>Ouvrez l'icone Jolie Admin ajoutee sur l'ecran d'accueil.</li>
+            <li>Touchez Autoriser, puis acceptez la demande iOS.</li>
+          </ol>
+          <p>Sur iPhone, Apple autorise les notifications web uniquement depuis l'app ajoutee a l'ecran d'accueil.</p>
+        </div>
+      `;
+      document.body.append(panel);
+      panel.addEventListener("click", (event) => {
+        if (event.target === panel || event.target.closest("[data-close-ios-guide]")) {
+          panel.hidden = true;
+        }
+      });
+    }
+    panel.hidden = false;
   }
 
   async function showBrowserNotification(order) {
@@ -477,6 +595,11 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
   }
 
   async function pollAlerts() {
+    if (adminIsIosDevice() && !adminIsStandaloneApp()) {
+      updatePermissionUi();
+      return;
+    }
+
     try {
       const alerts = await fetchAlerts();
       const latestOrder = alerts.latest_order || null;
@@ -487,7 +610,7 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
       if (newCount > 0) {
         setText(`${newCount} nouvelle(s) commande(s) en attente. ${adminNotificationLabel()}`);
       } else if ("Notification" in window && Notification.permission === "granted") {
-        setText("Aucune nouvelle commande. Notifications actives sur ce telephone.");
+        setText("Aucune nouvelle commande. Notifications actives sur cet appareil.");
       } else {
         setText("Aucune nouvelle commande pour le moment. Activez les notifications pour cet appareil.");
       }
@@ -517,26 +640,56 @@ document.querySelectorAll("[data-admin-notifications]").forEach((root) => {
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredInstallPrompt = event;
-    updatePermissionUi("Vous pouvez installer l'admin sur ce telephone.");
+    updatePermissionUi("Vous pouvez installer l'admin sur cet appareil.");
   });
 
   installButton?.addEventListener("click", async () => {
     if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice.catch(() => null);
-    deferredInstallPrompt = null;
-    updatePermissionUi();
+    installButton.disabled = true;
+    installButton.textContent = "Installation...";
+
+    try {
+      deferredInstallPrompt.prompt();
+      await adminWithTimeout(
+        deferredInstallPrompt.userChoice.catch(() => null),
+        15000,
+        "Installation non confirmee. Utilisez le menu du navigateur si rien ne s'affiche."
+      );
+      deferredInstallPrompt = null;
+      updatePermissionUi("Ouvrez l'icone Jolie Admin installee, puis touchez Autoriser.");
+    } catch (error) {
+      updatePermissionUi(error.message || "Installation non terminee.");
+    } finally {
+      installButton.disabled = false;
+    }
+  });
+
+  iosHelpButton?.addEventListener("click", showIosInstallGuide);
+
+  testButton?.addEventListener("click", async () => {
+    testButton.disabled = true;
+    testButton.textContent = "Test...";
+
+    try {
+      await adminShowTestNotification();
+      updatePermissionUi("Notification test envoyee sur cet appareil.");
+    } catch (error) {
+      updatePermissionUi(error.message || "Impossible d'envoyer la notification test.");
+    } finally {
+      testButton.disabled = false;
+      testButton.textContent = "Tester";
+    }
   });
 
   enableButton?.addEventListener("click", async () => {
     if (enableButton) {
       enableButton.disabled = true;
-      enableButton.textContent = "Activation...";
+      enableButton.textContent = "Verification...";
     }
 
     try {
       await adminEnablePushNotifications();
-      updatePermissionUi("Notifications activees. Les nouvelles commandes seront signalees sur ce telephone.");
+      updatePermissionUi("Notifications activees. Les nouvelles commandes seront signalees sur cet appareil.");
     } catch (error) {
       updatePermissionUi(error.message || "Impossible d'activer les notifications.");
     } finally {

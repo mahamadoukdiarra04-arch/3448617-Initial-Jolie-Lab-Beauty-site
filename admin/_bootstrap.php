@@ -8,7 +8,7 @@ require_once __DIR__ . '/../includes/admin_products.php';
 
 function jolie_admin_asset(string $path): string
 {
-    return 'assets/' . ltrim($path, '/') . '?v=20260805-phase10';
+    return 'assets/' . ltrim($path, '/') . '?v=20260807-notif-onboarding';
 }
 
 function jolie_admin_setup_text(Throwable $error): string
@@ -61,8 +61,10 @@ function jolie_admin_page_start(string $title, ?array $user = null): void
           <span data-admin-notification-text>Activez cet appareil pour recevoir les nouvelles commandes.</span>
         </div>
         <div class="admin-notification-actions">
+          <button class="admin-button is-muted" type="button" data-ios-install-help hidden>Guide iPhone</button>
           <button class="admin-button is-muted" type="button" data-install-admin-app hidden>Installer</button>
-          <button class="admin-button is-muted" type="button" data-enable-admin-notifications>Activer</button>
+          <button class="admin-button is-muted" type="button" data-test-admin-notification hidden>Tester</button>
+          <button class="admin-button is-muted" type="button" data-enable-admin-notifications>Autoriser</button>
         </div>
       </div>
 HTML;
