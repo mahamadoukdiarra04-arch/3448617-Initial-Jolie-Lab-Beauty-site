@@ -4,6 +4,9 @@ const cartCountNode = document.querySelector("[data-cart-count]");
 const addButton = document.querySelector("[data-product-add]");
 const feedback = document.querySelector("[data-product-feedback]");
 const galleryMain = document.querySelector("[data-gallery-main]");
+let checkoutRedirectPending = false;
+
+if (addButton) addButton.textContent = "Passer commande";
 
 function defaultVariant(product) {
   return Array.isArray(product.variants) && product.variants.length ? product.variants[0] : null;
@@ -93,25 +96,29 @@ function selectedVariant() {
   return productVariant(currentProduct, select?.value || "") || defaultVariant(currentProduct);
 }
 
-function addCurrentProduct() {
-  if (!currentProduct) return;
+function addCurrentProduct(button) {
+  if (!currentProduct || checkoutRedirectPending) return;
   const variant = selectedVariant();
   if (currentProduct.variants?.length && !variant) {
     const select = document.querySelector(`[data-variant-select="${currentProduct.id}"]`);
     select?.reportValidity();
     select?.focus();
-    if (feedback) feedback.textContent = "Choisissez Petit complet ou Grand complet avant d'ajouter ce produit.";
+    if (feedback) feedback.textContent = "Choisissez le format avant de passer commande.";
     return;
   }
+  checkoutRedirectPending = true;
   const key = cartKey(currentProduct.id, variant?.id);
   const cart = loadCart();
   cart[key] = (cart[key] || 0) + 1;
   saveCart(cart);
   updateCartCount();
   trackPixelAddToCart(currentProduct, variant);
-  if (feedback) {
-    feedback.innerHTML = `${lineName(currentProduct, variant)} a été ajouté au panier. <a href="../checkout.html">Finaliser la commande</a>`;
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Redirection...";
   }
+  if (feedback) feedback.textContent = `${lineName(currentProduct, variant)} est prêt pour la commande.`;
+  window.location.assign("../checkout.html");
 }
 
 document.addEventListener("click", (event) => {
@@ -124,7 +131,7 @@ document.addEventListener("click", (event) => {
   }
 });
 
-if (addButton) addButton.addEventListener("click", addCurrentProduct);
+if (addButton) addButton.addEventListener("click", () => addCurrentProduct(addButton));
 const firstThumb = document.querySelector("[data-gallery-thumb]");
 if (firstThumb) firstThumb.classList.add("is-active");
 updateCartCount();

@@ -4,6 +4,7 @@ const CONTACT = {
 
 let products = window.JOLIE_PRODUCTS || [];
 let currentProduct = null;
+let checkoutRedirectPending = false;
 const detailRoot = document.querySelector("[data-product-detail]");
 const cartCountNode = document.querySelector("[data-cart-count]");
 
@@ -222,7 +223,7 @@ function renderProduct(product) {
         ${variantSelectMarkup(product)}
 
         <div class="product-action-row">
-          <button class="button button-primary" type="button" data-product-add>Ajouter au panier</button>
+          <button class="button button-primary" type="button" data-product-add>Passer commande</button>
           <a class="button button-soft" href="https://wa.me/${CONTACT.phone}?text=${encodeURIComponent(whatsappText)}" target="_blank" rel="noreferrer">Commander sur WhatsApp</a>
         </div>
         <p class="product-feedback" data-product-feedback aria-live="polite"></p>
@@ -280,26 +281,30 @@ function selectedVariant() {
   return productVariant(currentProduct, select?.value || "") || defaultVariant(currentProduct);
 }
 
-function addCurrentProduct() {
-  if (!currentProduct) return;
+function addCurrentProduct(button) {
+  if (!currentProduct || checkoutRedirectPending) return;
   const variant = selectedVariant();
   const feedback = document.querySelector("[data-product-feedback]");
   if (currentProduct.variants?.length && !variant) {
     const select = document.querySelector("[data-variant-select]");
     select?.reportValidity();
     select?.focus();
-    if (feedback) feedback.textContent = "Choisissez le format avant d'ajouter ce produit.";
+    if (feedback) feedback.textContent = "Choisissez le format avant de passer commande.";
     return;
   }
+  checkoutRedirectPending = true;
   const cart = loadCart();
   const key = cartKey(currentProduct.id, variant?.id);
   cart[key] = (cart[key] || 0) + 1;
   saveCart(cart);
   updateCartCount();
   trackPixelAddToCart(currentProduct, variant);
-  if (feedback) {
-    feedback.innerHTML = `${escapeHtml(lineName(currentProduct, variant))} a été ajouté au panier. <a href="checkout.html">Finaliser la commande</a>`;
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Redirection...";
   }
+  if (feedback) feedback.textContent = `${lineName(currentProduct, variant)} est prêt pour la commande.`;
+  window.location.assign("checkout.html");
 }
 
 document.addEventListener("click", (event) => {
@@ -311,7 +316,8 @@ document.addEventListener("click", (event) => {
       button.classList.toggle("is-active", button === thumb);
     });
   }
-  if (event.target.closest("[data-product-add]")) addCurrentProduct();
+  const addButton = event.target.closest("[data-product-add]");
+  if (addButton) addCurrentProduct(addButton);
 });
 
 async function initializeProductDetail() {
