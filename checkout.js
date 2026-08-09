@@ -270,8 +270,8 @@ function buildOrderPayload() {
       phone: data.customerPhone || "",
       city: data.customerCity || "",
       area: data.customerArea || "",
-      address: data.address || "",
-      notes: data.notes || "",
+      address: "",
+      notes: "",
     },
     paymentMethod: PAYMENT_LABEL,
     deliveryFee: null,
@@ -370,8 +370,6 @@ function buildWhatsAppUrl(order = buildOrderPayload()) {
     `Téléphone : ${order.customer.phone}`,
     `Ville : ${order.customer.city}`,
     `Quartier / zone : ${order.customer.area}`,
-    `Adresse : ${order.customer.address}`,
-    `Note : ${order.customer.notes}`,
   ];
   return `https://wa.me/22394307799?text=${encodeURIComponent(lines.join("\n"))}`;
 }

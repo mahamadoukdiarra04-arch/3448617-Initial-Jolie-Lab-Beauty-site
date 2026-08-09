@@ -83,7 +83,7 @@ function jolie_normalize_order_payload(array $payload): array
     $phone = jolie_required_string($customer, 'phone', 'Le telephone', $errors, 80);
     $city = jolie_required_string($customer, 'city', 'La ville', $errors, 120);
     $area = jolie_required_string($customer, 'area', 'Le quartier ou la zone', $errors, 160);
-    $address = jolie_required_string($customer, 'address', "L'adresse", $errors, 500);
+    $address = jolie_optional_string($customer, 'address', 500);
     $notes = jolie_optional_string($customer, 'notes', 1000);
 
     if ($errors) {

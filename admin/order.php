@@ -65,8 +65,12 @@ jolie_admin_page_start('Detail commande', $user);
         <div><dt>Telephone</dt><dd><?= jolie_admin_h($order['customer_phone']) ?></dd></div>
         <div><dt>Ville</dt><dd><?= jolie_admin_h($order['customer_city']) ?></dd></div>
         <div><dt>Quartier / zone</dt><dd><?= jolie_admin_h($order['customer_area']) ?></dd></div>
-        <div><dt>Adresse</dt><dd><?= jolie_admin_h($order['customer_address']) ?></dd></div>
-        <div><dt>Note</dt><dd><?= jolie_admin_h($order['customer_notes'] ?: '--') ?></dd></div>
+        <?php if ((string) $order['customer_address'] !== ''): ?>
+          <div><dt>Adresse</dt><dd><?= jolie_admin_h($order['customer_address']) ?></dd></div>
+        <?php endif; ?>
+        <?php if ((string) $order['customer_notes'] !== ''): ?>
+          <div><dt>Note</dt><dd><?= jolie_admin_h($order['customer_notes']) ?></dd></div>
+        <?php endif; ?>
       </dl>
     </article>
 
