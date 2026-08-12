@@ -155,6 +155,23 @@ function jolie_product_categories(): array
     return $categories ?: jolie_product_default_categories();
 }
 
+function jolie_admin_ensure_products_deleted_column(): void
+{
+    static $ensured = false;
+
+    if ($ensured) {
+        return;
+    }
+
+    $pdo = jolie_pdo();
+    $stmt = $pdo->query("SHOW COLUMNS FROM products LIKE 'is_deleted'");
+    if (!$stmt->fetch()) {
+        $pdo->exec('ALTER TABLE products ADD COLUMN is_deleted TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active');
+    }
+
+    $ensured = true;
+}
+
 function jolie_product_nullable_string(array $source, string $key, int $maxLength = 1000): ?string
 {
     $value = trim((string) ($source[$key] ?? ''));
@@ -609,13 +626,15 @@ function jolie_admin_product_status_label(int $isActive): string
 
 function jolie_admin_product_stats(): array
 {
+    jolie_admin_ensure_products_deleted_column();
     $pdo = jolie_pdo();
     $totals = $pdo->query(
         'SELECT
             COUNT(*) AS total_products,
             SUM(is_active = 1) AS active_products,
             SUM(is_active = 0) AS hidden_products
-        FROM products'
+        FROM products
+        WHERE is_deleted = 0'
     )->fetch() ?: [];
 
     return [
@@ -627,8 +646,9 @@ function jolie_admin_product_stats(): array
 
 function jolie_admin_list_products(array $filters = [], int $limit = 100): array
 {
+    jolie_admin_ensure_products_deleted_column();
     $pdo = jolie_pdo();
-    $where = [];
+    $where = ['p.is_deleted = 0'];
     $params = [];
     $status = trim((string) ($filters['status'] ?? ''));
     $category = trim((string) ($filters['category'] ?? ''));
@@ -684,8 +704,9 @@ function jolie_admin_load_product_relations(array &$product): void
 
 function jolie_admin_get_product(int $id): ?array
 {
+    jolie_admin_ensure_products_deleted_column();
     $pdo = jolie_pdo();
-    $stmt = $pdo->prepare('SELECT * FROM products WHERE id = :id LIMIT 1');
+    $stmt = $pdo->prepare('SELECT * FROM products WHERE id = :id AND is_deleted = 0 LIMIT 1');
     $stmt->execute(['id' => $id]);
     $product = $stmt->fetch();
 
@@ -699,6 +720,7 @@ function jolie_admin_get_product(int $id): ?array
 
 function jolie_admin_save_product(?int $id, array $payload): int
 {
+    jolie_admin_ensure_products_deleted_column();
     $product = jolie_admin_normalize_product_payload($payload);
     $pdo = jolie_pdo();
 
@@ -819,12 +841,26 @@ function jolie_admin_save_product(?int $id, array $payload): int
 
 function jolie_admin_set_product_active(int $id, bool $isActive): void
 {
+    jolie_admin_ensure_products_deleted_column();
     $pdo = jolie_pdo();
-    $stmt = $pdo->prepare('UPDATE products SET is_active = :is_active WHERE id = :id');
+    $stmt = $pdo->prepare('UPDATE products SET is_active = :is_active WHERE id = :id AND is_deleted = 0');
     $stmt->execute([
         'id' => $id,
         'is_active' => $isActive ? 1 : 0,
     ]);
+}
+
+function jolie_admin_delete_product(int $id): array
+{
+    $product = jolie_admin_get_product($id);
+    if (!$product) {
+        throw new JolieValidationException(['product' => 'Produit introuvable.']);
+    }
+
+    $stmt = jolie_pdo()->prepare('UPDATE products SET is_active = 0, is_deleted = 1 WHERE id = :id');
+    $stmt->execute(['id' => $id]);
+
+    return $product;
 }
 
 function jolie_public_product_record(array $product): array
@@ -879,13 +915,14 @@ function jolie_public_product_record(array $product): array
 
 function jolie_public_products_payload(): array
 {
+    jolie_admin_ensure_products_deleted_column();
     $pdo = jolie_pdo();
     $rows = $pdo->query('SELECT * FROM products ORDER BY sort_order ASC, name ASC')->fetchAll() ?: [];
     $products = [];
     $hidden = [];
 
     foreach ($rows as $product) {
-        if ((int) $product['is_active'] !== 1) {
+        if ((int) ($product['is_deleted'] ?? 0) === 1 || (int) $product['is_active'] !== 1) {
             $hidden[] = [
                 'id' => 'admin-' . (int) $product['id'],
                 'sourceId' => (int) $product['id'],

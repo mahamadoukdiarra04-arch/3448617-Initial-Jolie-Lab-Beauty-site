@@ -37,10 +37,27 @@ try {
             header('Location: products.php?category_created=' . rawurlencode($categoryName));
             exit;
         }
+        if ($action === 'delete_product') {
+            $deletedProduct = jolie_admin_delete_product((int) ($_POST['id'] ?? 0));
+            $params = ['deleted' => (string) $deletedProduct['name']];
+            if ($status !== '') {
+                $params['status'] = $status;
+            }
+            if ($category !== '') {
+                $params['category'] = $category;
+            }
+            if ($search !== '') {
+                $params['q'] = $search;
+            }
+            header('Location: products.php?' . http_build_query($params));
+            exit;
+        }
     }
 
     if (isset($_GET['category_created'])) {
         $notice = 'Categorie creee : ' . (string) $_GET['category_created'];
+    } elseif (isset($_GET['deleted'])) {
+        $notice = 'Produit supprime : ' . (string) $_GET['deleted'];
     }
 
     $categories = jolie_product_categories();
@@ -159,7 +176,7 @@ jolie_admin_page_start('Produits', $user);
               <th>Media</th>
               <th>Ordre</th>
               <th>Statut</th>
-              <th></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -186,7 +203,17 @@ jolie_admin_page_start('Produits', $user);
                     <?= jolie_admin_h(jolie_admin_product_status_label((int) $product['is_active'])) ?>
                   </span>
                 </td>
-                <td><a class="table-link" href="product.php?id=<?= (int) $product['id'] ?>">Modifier</a></td>
+                <td>
+                  <div class="admin-actions">
+                    <a class="table-link" href="product.php?id=<?= (int) $product['id'] ?>">Modifier</a>
+                    <form class="admin-inline-form" method="post" data-confirm-message="Supprimer definitivement le produit <?= jolie_admin_h($product['name']) ?> ?">
+                      <input type="hidden" name="csrf_token" value="<?= jolie_admin_h(jolie_csrf_token()) ?>" />
+                      <input type="hidden" name="action" value="delete_product" />
+                      <input type="hidden" name="id" value="<?= (int) $product['id'] ?>" />
+                      <button class="table-link is-danger-link" type="submit">Supprimer</button>
+                    </form>
+                  </div>
+                </td>
               </tr>
             <?php endforeach; ?>
           </tbody>

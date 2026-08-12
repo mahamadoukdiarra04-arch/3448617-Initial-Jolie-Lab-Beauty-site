@@ -219,6 +219,19 @@ function jolie_admin_update_order(int $id, string $status, ?int $deliveryFee): v
     ]);
 }
 
+function jolie_admin_delete_order(int $id): array
+{
+    $order = jolie_admin_get_order($id);
+    if (!$order) {
+        throw new JolieValidationException(['order' => 'Commande introuvable.']);
+    }
+
+    $stmt = jolie_pdo()->prepare('DELETE FROM orders WHERE id = :id');
+    $stmt->execute(['id' => $id]);
+
+    return $order;
+}
+
 function jolie_admin_order_alert_snapshot(int $afterId = 0): array
 {
     $pdo = jolie_pdo();

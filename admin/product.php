@@ -72,6 +72,12 @@ try {
         $id = (int) ($_POST['id'] ?? $id);
         $submittedPayload = $_POST;
 
+        if ($id > 0 && $action === 'delete') {
+            $deletedProduct = jolie_admin_delete_product($id);
+            header('Location: products.php?deleted=' . rawurlencode((string) $deletedProduct['name']));
+            exit;
+        }
+
         if ($id > 0 && $action === 'hide') {
             jolie_admin_set_product_active($id, false);
             header('Location: product.php?id=' . $id . '&hidden=1');
@@ -156,7 +162,7 @@ $hasDefaultVariant = array_filter($variantRows, static fn (array $row): bool => 
     <section class="admin-alert is-error"><?= jolie_admin_h($error) ?></section>
   <?php endif; ?>
 
-  <form class="product-edit-layout" method="post" enctype="multipart/form-data" data-product-admin-form>
+  <form class="product-edit-layout" method="post" enctype="multipart/form-data" novalidate data-product-admin-form data-product-mode="<?= $id > 0 ? 'edit' : 'new' ?>">
     <input type="hidden" name="csrf_token" value="<?= jolie_admin_h(jolie_csrf_token()) ?>" />
     <input type="hidden" name="id" value="<?= jolie_admin_h($form['id'] ?? '') ?>" />
 
@@ -315,6 +321,9 @@ $hasDefaultVariant = array_filter($variantRows, static fn (array $row): bool => 
             <button class="admin-button is-danger" type="submit" name="action" value="hide" formnovalidate>Masquer</button>
           <?php elseif ($id > 0): ?>
             <button class="admin-button is-success" type="submit" name="action" value="publish" formnovalidate>Republier</button>
+          <?php endif; ?>
+          <?php if ($id > 0): ?>
+            <button class="admin-button is-danger" type="submit" name="action" value="delete" formnovalidate data-confirm-message="Supprimer definitivement le produit <?= jolie_admin_h($form['name']) ?> ?">Supprimer</button>
           <?php endif; ?>
         </div>
       </section>

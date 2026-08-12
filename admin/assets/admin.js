@@ -11,6 +11,24 @@ document.querySelectorAll(".order-update-form").forEach((form) => {
   });
 });
 
+document.querySelectorAll("form[data-confirm-message]").forEach((form) => {
+  form.addEventListener("submit", (event) => {
+    const message = form.dataset.confirmMessage || "Confirmer cette action ?";
+    if (!window.confirm(message)) {
+      event.preventDefault();
+    }
+  });
+});
+
+document.querySelectorAll("button[data-confirm-message]").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    const message = button.dataset.confirmMessage || "Confirmer cette action ?";
+    if (!window.confirm(message)) {
+      event.preventDefault();
+    }
+  });
+});
+
 function adminSlugify(value) {
   return String(value || "")
     .normalize("NFD")
@@ -118,6 +136,52 @@ function adminCreateVariantRow(list) {
   adminRenumberVariants(list);
 }
 
+function adminSetFieldError(field, message) {
+  if (!field) return;
+
+  field.classList.add("is-field-error");
+  field.setAttribute("aria-invalid", "true");
+
+  const label = field.closest("label");
+  if (!label) return;
+
+  let error = label.querySelector("[data-field-error]");
+  if (!error) {
+    error = document.createElement("span");
+    error.className = "product-field-error";
+    error.dataset.fieldError = "";
+    label.append(error);
+  }
+  error.textContent = message;
+}
+
+function adminClearFieldError(field) {
+  if (!field) return;
+
+  field.classList.remove("is-field-error");
+  field.removeAttribute("aria-invalid");
+
+  const label = field.closest("label");
+  label?.querySelector("[data-field-error]")?.remove();
+}
+
+function adminShowProductValidation(form, errors) {
+  let alert = form.parentElement?.querySelector("[data-product-client-error]");
+  if (!alert) {
+    alert = document.createElement("section");
+    alert.className = "admin-alert is-error product-client-error";
+    alert.dataset.productClientError = "";
+    form.before(alert);
+  }
+
+  const uniqueMessages = [...new Set(errors.map((item) => item.message))];
+  alert.innerHTML = `
+    <strong>Produit incomplet.</strong>
+    <span>${uniqueMessages.join(" ")}</span>
+  `;
+  alert.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
 document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   const nameInput = form.querySelector("[data-product-name]");
   const slugInput = form.querySelector("[data-product-slug]");
@@ -135,6 +199,9 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   const previewCategory = form.querySelector("[data-preview-category]");
   const previewPrice = form.querySelector("[data-preview-price]");
   const variantList = form.querySelector("[data-variant-list]");
+  const descriptionInput = form.querySelector('[name="description"]');
+  const formMode = form.dataset.productMode || "edit";
+  let productSubmitter = null;
 
   function currentCategoryLabel() {
     if (categoryInput?.value === "__new__") {
@@ -240,9 +307,80 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
 
   videoUpload?.addEventListener("change", updateMediaPreview);
 
-  form.addEventListener("input", () => {
+  form.addEventListener("input", (event) => {
     updateProductPreview();
-    updateMediaPreview();
+    if (event.target === imageLines || event.target === videoLines) {
+      updateMediaPreview();
+    }
+  });
+
+  form.addEventListener("input", (event) => {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) {
+      adminClearFieldError(event.target);
+    }
+  });
+
+  form.addEventListener("change", (event) => {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) {
+      adminClearFieldError(event.target);
+    }
+  });
+
+  form.addEventListener("click", (event) => {
+    const submitter = event.target.closest('button[type="submit"], input[type="submit"]');
+    if (submitter && form.contains(submitter)) {
+      productSubmitter = submitter;
+    }
+  });
+
+  form.addEventListener("submit", (event) => {
+    const submitter = event.submitter || productSubmitter;
+    productSubmitter = null;
+    if (submitter?.formNoValidate) return;
+    if (submitter?.name === "action" && submitter.value !== "save") return;
+
+    const existingAlert = form.parentElement?.querySelector("[data-product-client-error]");
+    existingAlert?.remove();
+    form.querySelectorAll(".is-field-error").forEach(adminClearFieldError);
+
+    const errors = [];
+    const addError = (field, message) => {
+      errors.push({ field, message });
+      adminSetFieldError(field, message);
+    };
+
+    if (!nameInput?.value.trim()) {
+      addError(nameInput, "Saisissez le nom du produit.");
+    }
+
+    if (categoryInput?.value === "__new__" && !newCategoryInput?.value.trim()) {
+      addError(newCategoryInput, "Saisissez le nom de la nouvelle categorie.");
+    }
+
+    if (!priceInput?.value || Number(priceInput.value) <= 0) {
+      addError(priceInput, "Indiquez le prix principal du produit.");
+    }
+
+    if (!descriptionInput?.value.trim()) {
+      addError(descriptionInput, "Ajoutez la description originale.");
+    }
+
+    variantList?.querySelectorAll("[data-variant-row]").forEach((row) => {
+      const fields = Array.from(row.querySelectorAll("input"));
+      const keyField = fields.find((field) => field.name === "variant_ids[]");
+      const nameField = fields.find((field) => field.name === "variant_names[]");
+      const priceField = fields.find((field) => field.name === "variant_prices[]");
+      const hasVariant = [keyField, nameField, priceField].some((field) => field?.value.trim());
+
+      if (!hasVariant) return;
+      if (!nameField?.value.trim()) addError(nameField, "Completez le nom de cette variante.");
+      if (!priceField?.value || Number(priceField.value) <= 0) addError(priceField, "Indiquez le prix de chaque variante commencee.");
+    });
+
+    if (!errors.length) return;
+
+    event.preventDefault();
+    adminShowProductValidation(form, errors);
   });
 
   form.addEventListener("click", (event) => {
@@ -298,6 +436,15 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   updateCategoryMode();
   updateProductPreview();
   updateMediaPreview();
+
+  if (formMode === "new") {
+    window.requestAnimationFrame(() => {
+      if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      if (nameInput && !nameInput.value.trim() && window.matchMedia("(hover: hover)").matches) {
+        nameInput.focus({ preventScroll: true });
+      }
+    });
+  }
 });
 
 function adminWithTimeout(promise, duration, message) {

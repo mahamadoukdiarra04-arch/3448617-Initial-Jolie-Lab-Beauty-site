@@ -72,10 +72,12 @@ CREATE TABLE IF NOT EXISTS products (
   suited_for TEXT NULL,
   sort_order INT UNSIGNED NOT NULL DEFAULT 9999,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_products_slug (slug),
+  KEY idx_products_deleted_active (is_deleted, is_active, sort_order, name),
   KEY idx_products_active_sort (is_active, sort_order, name),
   KEY idx_products_category (category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

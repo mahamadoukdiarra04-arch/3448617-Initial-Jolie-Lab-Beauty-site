@@ -18,6 +18,14 @@ try {
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         jolie_verify_csrf();
+        $action = (string) ($_POST['action'] ?? 'update_order');
+
+        if ($action === 'delete_order') {
+            $deletedOrder = jolie_admin_delete_order($id);
+            header('Location: orders.php?deleted=' . rawurlencode((string) $deletedOrder['order_number']));
+            exit;
+        }
+
         $status = (string) ($_POST['status'] ?? 'new');
         $deliveryRaw = trim((string) ($_POST['delivery_fee'] ?? ''));
         $deliveryFee = $deliveryRaw === '' ? null : (int) $deliveryRaw;
@@ -81,6 +89,7 @@ jolie_admin_page_start('Detail commande', $user);
       </div>
       <form class="order-update-form" method="post">
         <input type="hidden" name="csrf_token" value="<?= jolie_admin_h(jolie_csrf_token()) ?>" />
+        <input type="hidden" name="action" value="update_order" />
         <label>
           Statut
           <select name="status">
@@ -133,6 +142,18 @@ jolie_admin_page_start('Detail commande', $user);
         </tbody>
       </table>
     </div>
+  </section>
+
+  <section class="admin-panel admin-danger-zone">
+    <div>
+      <h2>Suppression</h2>
+      <p>Retirer cette commande de l'historique admin. Cette action est definitive.</p>
+    </div>
+    <form method="post" data-confirm-message="Supprimer definitivement la commande <?= jolie_admin_h($order['order_number']) ?> ?">
+      <input type="hidden" name="csrf_token" value="<?= jolie_admin_h(jolie_csrf_token()) ?>" />
+      <input type="hidden" name="action" value="delete_order" />
+      <button class="admin-button is-danger" type="submit">Supprimer la commande</button>
+    </form>
   </section>
 <?php endif; ?>
 <?php jolie_admin_page_end(); ?>

@@ -121,6 +121,31 @@ a {
   text-transform: none;
 }
 
+.product-form-section input.is-field-error,
+.product-form-section select.is-field-error,
+.product-form-section textarea.is-field-error,
+.variant-admin-row input.is-field-error {
+  border-color: rgba(184, 66, 54, 0.82);
+  box-shadow: 0 0 0 3px rgba(184, 66, 54, 0.1);
+}
+
+.product-field-error {
+  color: var(--admin-red);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+.product-client-error {
+  display: grid;
+  gap: 4px;
+}
+
+.product-client-error span {
+  line-height: 1.45;
+}
+
 .login-card button,
 .order-update-form button,
 .orders-filter button,
@@ -155,6 +180,51 @@ a {
 
 .admin-button.is-success {
   background: var(--admin-green);
+}
+
+.admin-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-inline-form {
+  display: inline-flex;
+  margin: 0;
+}
+
+button.table-link {
+  padding: 0;
+  color: var(--admin-gold);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.table-link.is-danger-link,
+button.table-link.is-danger-link {
+  color: var(--admin-red);
+}
+
+.admin-danger-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-danger-zone h2,
+.admin-danger-zone p {
+  margin: 0;
+}
+
+.admin-danger-zone p {
+  margin-top: 6px;
+  color: var(--admin-muted);
+  line-height: 1.45;
 }
 
 .admin-shell {
@@ -934,6 +1004,15 @@ a {
   .admin-notification-actions {
     width: 100%;
     flex-direction: column;
+  }
+
+  .admin-danger-zone {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-danger-zone form {
+    width: 100%;
   }
 
   .admin-sidebar nav {
