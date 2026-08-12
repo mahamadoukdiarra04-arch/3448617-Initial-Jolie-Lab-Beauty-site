@@ -1,9 +1,3 @@
-const CONTACT = {
-  phone: "22394307799",
-  displayPhone: "+223 94 30 77 99",
-  email: "ramatabore31@gmail.com",
-};
-
 const categories = ["Tous", "Visage", "Corps", "Corps & Visage", "Cheveux", "Packs", "Accessoires", "Maquillage", "Homme", "Homme & Femme", "Parfum"];
 
 let products = window.JOLIE_PRODUCTS || [
@@ -211,7 +205,6 @@ const modalSku = document.querySelector("[data-modal-sku]");
 const modalSuited = document.querySelector("[data-modal-suited]");
 const modalUsage = document.querySelector("[data-modal-usage]");
 const modalRelated = document.querySelector("[data-related-products]");
-const modalWhatsApp = document.querySelector("[data-modal-whatsapp]");
 const header = document.querySelector("[data-header]");
 const nav = document.querySelector("[data-nav]");
 
@@ -393,17 +386,12 @@ function getUsageAdvice(product) {
   if (name.includes("gants")) return "Utiliser sous la douche avec savon ou gel douche, puis hydrater la peau. Ne pas frotter trop fort sur peau irritée.";
   if (name.includes("éponges")) return "Utiliser sèche ou humide selon le fini souhaité, puis laver et laisser sécher après usage.";
   if (name.includes("lingettes")) return "Utiliser pour retirer maquillage ou impuretés, puis compléter avec un soin adapté si besoin.";
-  if (name.includes("cheveux") || name.includes("hair") || name.includes("barbe")) return "Appliquer régulièrement selon la routine choisie. Demander confirmation sur WhatsApp pour la fréquence conseillée.";
+  if (name.includes("cheveux") || name.includes("hair") || name.includes("barbe")) return "Appliquer régulièrement selon la routine choisie. Confirmer la fréquence conseillée lors de la validation de commande.";
   if (product.category === "Parfum") return "Vaporiser légèrement sur les zones de pulsation ou les vêtements, en évitant les yeux et les peaux irritées.";
-  if (product.category === "Corps & Visage") return "Utiliser chaque produit selon sa zone d'application, visage ou corps, et demander conseil sur WhatsApp pour l'ordre de routine.";
+  if (product.category === "Corps & Visage") return "Utiliser chaque produit selon sa zone d'application, visage ou corps, et confirmer l'ordre de routine lors de la validation de commande.";
   if (product.category === "Packs") return "Utiliser les produits du pack dans l'ordre conseillé au moment de la commande. Faire un test sur une petite zone si la peau est sensible.";
   if (product.category === "Visage") return "Appliquer sur peau propre et commencer progressivement. Éviter le contour des yeux et demander conseil en cas de peau sensible.";
-  return "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.";
-}
-
-function getProductWhatsAppUrl(product) {
-  const text = `Bonjour Jolie Lab Beauty, je souhaite avoir des informations sur : ${product.name} (${product.priceNote || formatPrice(product.price)}).`;
-  return `https://wa.me/${CONTACT.phone}?text=${encodeURIComponent(text)}`;
+  return "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.";
 }
 
 function loadCart() {
@@ -529,25 +517,6 @@ function renderCart() {
   saveCart();
 }
 
-function buildWhatsAppUrl() {
-  const data = new FormData(orderForm);
-  const entries = cartEntries();
-  const lines = [
-    "Bonjour Jolie Lab Beauty, je souhaite commander :",
-    "",
-    ...entries.map(({ product, variant, quantity }) => `- ${quantity} x ${lineName(product, variant)} (${formatPrice(linePrice(product, variant))})`),
-    "",
-    `Total produits : ${formatPrice(cartAmount())}`,
-    `Nom : ${data.get("customerName") || ""}`,
-    `Téléphone : ${data.get("customerPhone") || ""}`,
-    `Livraison : ${data.get("deliveryZone") || ""}`,
-    `Paiement : ${data.get("paymentMethod") || ""}`,
-    `Adresse : ${data.get("address") || ""}`,
-  ];
-
-  return `https://wa.me/${CONTACT.phone}?text=${encodeURIComponent(lines.join("\n"))}`;
-}
-
 function renderProductStructuredData() {
   const structuredData = {
     "@context": "https://schema.org",
@@ -636,7 +605,6 @@ function openModal(id) {
   modalSku.textContent = `Réf. JLB-${String(product.id).padStart(3, "0")}`;
   modalSuited.textContent = getSuitedFor(product);
   modalUsage.textContent = getUsageAdvice(product);
-  modalWhatsApp.href = getProductWhatsAppUrl(product);
   modalBenefits.innerHTML = productBenefits(product).map((benefit) => `<li>${benefit}</li>`).join("");
   const related = products.filter((item) => item.id !== product.id && item.category === product.category).slice(0, 3);
   modalRelated.innerHTML = related.length

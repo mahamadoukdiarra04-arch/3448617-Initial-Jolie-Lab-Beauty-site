@@ -106,7 +106,7 @@ window.JOLIE_PRODUCTS = [
     "description": "castor-NF \nTraitement Anti-Imperfections – Dites Stop aux Vergetures – Résultats Visibles !\n\nDescription :\nObtiens une peau plus nette et éclatante grâce à ce traitement puissant contre les boutons, taches et imperfections. Utilisé régulièrement, il agit en profondeur pour améliorer visiblement l’état de la peau.\nEnlève les vergetures et les fards(mamies)\n✔️ Réduit les boutons et les taches\n✔️ Apaise les irritations et rougeurs\n\nPrix 7500F\n✔️ Nettoie et traite la peau en profondeur\n✔️ Améliore progressivement le teint\n\n📌 Résultat : une peau plus lisse, plus propre et éclatante au fil des semaines ✨",
     "summary": "castor-NF Traitement Anti-Imperfections – Dites Stop aux Vergetures – Résultats Visibles ! Description : Obtiens une peau plus nette et éclatante g...",
     "pageUrl": "produits/06-castor-nf-anti-imperfections.html",
-    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.",
+    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.",
     "suitedFor": "Les peaux sujettes aux boutons, marques visibles, excès de sébum ou texture irrégulière."
   },
   {
@@ -176,7 +176,7 @@ window.JOLIE_PRODUCTS = [
     "description": "✨ Sérum Éclaircissant Articulations (Doigts, Coudes, Genoux)\n\nDescription :\nDis adieu aux zones sombres avec ce sérum spécialement conçu pour éclaircir les articulations et unifier le teint. Sa formule agit en douceur pour hydrater, lisser et améliorer l’apparence des zones épaissies comme les doigts, coudes et genoux.\n\n✔️ Éclaircit les zones sombres\n✔️ Unifie le teint des articulations\n✔️ Hydrate et adoucit la peau\n✔️ Améliore la texture et l’apparence\n\n📌 Zones ciblées : doigts, jointures, coudes, genoux\n\n📌 Résultat : une peau plus claire, plus douce et visiblement uniforme ✨\nPrix 15000f",
     "summary": "✨ Sérum Éclaircissant Articulations (Doigts, Coudes, Genoux) Description : Dis adieu aux zones sombres avec ce sérum spécialement conçu pour éclair...",
     "pageUrl": "produits/10-serum-eclaircissant-articulations.html",
-    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.",
+    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.",
     "suitedFor": "Les soins corps orientés douceur, confort, éclat et aspect plus uniforme de la peau."
   },
   {
@@ -322,7 +322,7 @@ window.JOLIE_PRODUCTS = [
         "price": 17000
       }
     ],
-    "usage": "Appliquer régulièrement selon la routine choisie. Demander confirmation sur WhatsApp pour la fréquence conseillée.",
+    "usage": "Appliquer régulièrement selon la routine choisie. Confirmer la fréquence conseillée lors de la validation de commande.",
     "suitedFor": "Les routines capillaires qui ciblent la casse, la chute, la pousse ou le manque de volume."
   },
   {
@@ -339,7 +339,7 @@ window.JOLIE_PRODUCTS = [
     "description": "✨ Kit Repousse Barbe & Anti-Calvitie – Dermaroller + Huile Luxe Hair\n\nDescription :\nStimule la pousse naturelle de ta barbe et de tes cheveux avec ce kit puissant combinant dermaroller et huile nutritive. Le dermaroller active la circulation du cuir chevelu tandis que l’huile pénètre en profondeur pour nourrir et renforcer les racines.\n\n✔️ Stimule la pousse de la barbe et des cheveux\n✔️ Réveille les zones clairsemées (trous de barbe / débuts de calvitie)\n✔️ Renforce les racines et réduit la chute\n✔️ Favorise des poils et cheveux plus épais et denses\n\n🧴 Huile Luxe Hair : nourrit, hydrate et booste la croissance\n🔄 Dermaroller : active les follicules pour de meilleurs résultats\n\n📌 Résultat : barbe plus fournie et cheveux plus denses avec une utilisation régulière ✨\n\nPrix 12500f",
     "summary": "✨ Kit Repousse Barbe & Anti-Calvitie – Dermaroller + Huile Luxe Hair Description : Stimule la pousse naturelle de ta barbe et de tes cheveux avec c...",
     "pageUrl": "produits/19-kit-repousse-barbe-anti-calvitie.html",
-    "usage": "Appliquer régulièrement selon la routine choisie. Demander confirmation sur WhatsApp pour la fréquence conseillée.",
+    "usage": "Appliquer régulièrement selon la routine choisie. Confirmer la fréquence conseillée lors de la validation de commande.",
     "suitedFor": "Les hommes qui souhaitent entretenir la barbe, le cuir chevelu ou les zones clairsemées."
   },
   {
@@ -412,7 +412,7 @@ window.JOLIE_PRODUCTS = [
     "description": "Élégance, rangement et praticité dans une seule boîte ✨\n\nCette magnifique boîte à bijoux et maquillage est parfaite pour garder tous vos accessoires bien organisés 🩷\n✔️ Compartiments spacieux\n✔️ Miroir intégré\n✔️ Design chic et féminin\n✔️ Idéal pour bijoux, makeup et accessoires\n\nUn indispensable pour les filles qui aiment le luxe et l’organisation 💅\n\nPrix 40000f",
     "summary": "Élégance, rangement et praticité dans une seule boîte ✨ Cette magnifique boîte à bijoux et maquillage est parfaite pour garder tous vos accessoires...",
     "pageUrl": "produits/23-boite-a-bijoux-maquillage-avec-miroir.html",
-    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.",
+    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.",
     "suitedFor": "Les routines beauté quotidiennes qui ont besoin d'un accessoire pratique, simple et facile à nettoyer."
   },
   {
@@ -428,7 +428,7 @@ window.JOLIE_PRODUCTS = [
     "description": "La beauté commence par une bonne organisation 💄🩷\nVotre coin makeup mérite élégance et praticité ✨\n\n💼 Boîte de rangement makeup chic et pratique\n✔️ Grande capacité\n✔️ Design élégant\n✔️ Facile à transporter\n✔️ Garde tous vos produits bien organisés\nPrix 30000f",
     "summary": "La beauté commence par une bonne organisation 💄🩷 Votre coin makeup mérite élégance et praticité ✨ 💼 Boîte de rangement makeup chic et pratique ✔️ G...",
     "pageUrl": "produits/24-boite-de-rangement-makeup-chic.html",
-    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.",
+    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.",
     "suitedFor": "Les routines beauté quotidiennes qui ont besoin d'un accessoire pratique, simple et facile à nettoyer."
   },
   {
@@ -447,7 +447,7 @@ window.JOLIE_PRODUCTS = [
     "description": "Huile de massage DR. MINOW ✨\nUne huile douce et nourrissante pour une peau éclatante et bien hydratée 💛\n✔️ Aide à adoucir la peau\n✔️ Effet relaxant et agréable\n✔️ Texture légère non collante\n✔️ Parfum doux et sensation de fraîcheur\n\nParfaite pour les massages, le soin du corps et les moments de détente 🧴✨\n Prix 5000f",
     "summary": "Huile de massage DR. MINOW ✨ Une huile douce et nourrissante pour une peau éclatante et bien hydratée 💛 ✔️ Aide à adoucir la peau ✔️ Effet relaxant...",
     "pageUrl": "produits/25-huile-de-massage-dr-minow.html",
-    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.",
+    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.",
     "suitedFor": "Les soins corps orientés douceur, confort, éclat et aspect plus uniforme de la peau."
   },
   {
@@ -465,7 +465,7 @@ window.JOLIE_PRODUCTS = [
     "description": "Peau douce, lumineuse et bien hydratée avec notre gamme Advanced Korean Skin 🤍\n\n🛁 Le gel de douche nettoie la peau en douceur sans l’agresser et laisse une sensation de fraîcheur incroyable.\n\n✨ La pommade hydrate profondément, aide à illuminer le teint et donne un glow naturel à la peau.\n\n✔️ Convient à plusieurs types de peau\n✔️ Texture légère et agréable\n✔️ Paraben free & cruelty free\n✔️ Laisse la peau douce et parfumée toute la journée 💛\n\nPrix 40000f",
     "summary": "Peau douce, lumineuse et bien hydratée avec notre gamme Advanced Korean Skin 🤍 🛁 Le gel de douche nettoie la peau en douceur sans l’agresser et lai...",
     "pageUrl": "produits/26-gamme-advanced-korean-skin.html",
-    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.",
+    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.",
     "suitedFor": "Les soins corps orientés douceur, confort, éclat et aspect plus uniforme de la peau."
   },
   {
@@ -482,7 +482,7 @@ window.JOLIE_PRODUCTS = [
     "description": "Peau douce, fraîche et délicatement parfumée après chaque douche 🛁🍋🍓\nNos gels douche exfoliants nettoient la peau en douceur tout en laissant un glow naturel et une sensation de fraîcheur incroyable 💛\n\n✔️ Aide à éliminer les impuretés\n✔️ Laisse la peau lisse et éclatante\n✔️ Parfum fruité longue durée\n✔️ Texture agréable avec effet exfoliant doux\n✔️ Convient à plusieurs types de peau\n\nDisponible en plusieurs senteurs gourmandes : Papaya, Strawberry, Lemon & Carrot ✨\n\nPrix 10000f",
     "summary": "Peau douce, fraîche et délicatement parfumée après chaque douche 🛁🍋🍓 Nos gels douche exfoliants nettoient la peau en douceur tout en laissant un gl...",
     "pageUrl": "produits/27-gels-douche-exfoliants-fruites.html",
-    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.",
+    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.",
     "suitedFor": "Les soins corps orientés douceur, confort, éclat et aspect plus uniforme de la peau."
   },
   {
@@ -499,7 +499,7 @@ window.JOLIE_PRODUCTS = [
     "description": "Une peau douce, propre et lumineuse au quotidien 🤍\nLes gels douche BERG nettoient en profondeur tout en laissant la peau fraîche, hydratée et délicatement parfumée 🛁✨\n\n✔️ Éclaircit et illumine le teint\n✔️ Exfolie en douceur\n✔️ Convient à plusieurs types de peau\n✔️ Laisse la peau lisse et éclatante\n\n🌸 Papaya • Rice • Vitamin C\nPour une sensation de fraîcheur et un glow naturel après chaque douche \n\nPrix 8000f",
     "summary": "Une peau douce, propre et lumineuse au quotidien 🤍 Les gels douche BERG nettoient en profondeur tout en laissant la peau fraîche, hydratée et délic...",
     "pageUrl": "produits/28-gels-douche-berg-glow.html",
-    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande.",
+    "usage": "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande.",
     "suitedFor": "Les soins corps orientés douceur, confort, éclat et aspect plus uniforme de la peau."
   }
 ];

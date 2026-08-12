@@ -13,7 +13,6 @@ const summaryTotal = document.querySelector("[data-summary-total]");
 const form = document.querySelector("[data-checkout-form]");
 const sendButton = document.querySelector("[data-send-order]");
 const messageNode = document.querySelector("[data-checkout-message]");
-const whatsAppFallback = document.querySelector("[data-whatsapp-fallback]");
 
 function formatPrice(price) {
   return new Intl.NumberFormat("fr-FR").format(Number(price) || 0) + " FCFA";
@@ -160,7 +159,6 @@ function renderCheckout() {
   summaryCount.textContent = count;
   summaryTotal.textContent = formatPrice(total);
   sendButton.disabled = entries.length === 0;
-  updateWhatsAppFallback();
 
   if (!entries.length) {
     cartItemsNode.innerHTML = `
@@ -354,35 +352,6 @@ function goToThankYouPage(order) {
   window.location.href = target;
 }
 
-function buildWhatsAppUrl(order = buildOrderPayload()) {
-  const lines = [
-    "Bonjour Jolie Lab Beauty, j'ai préparé cette commande sur le site :",
-    "",
-    "Produits :",
-    ...order.items.map((item) => `- ${item.quantity} x ${item.displayName} (${formatPrice(item.unitPrice)})`),
-    "",
-    `Total produits : ${formatPrice(order.productsTotal)}`,
-    `Livraison : ${order.deliveryLabel}`,
-    `Paiement : ${order.paymentMethod}`,
-    "",
-    "Informations client :",
-    `Nom : ${order.customer.name}`,
-    `Téléphone : ${order.customer.phone}`,
-    `Ville : ${order.customer.city}`,
-    `Quartier / zone : ${order.customer.area}`,
-  ];
-  return `https://wa.me/22394307799?text=${encodeURIComponent(lines.join("\n"))}`;
-}
-
-function updateWhatsAppFallback() {
-  if (!whatsAppFallback) return;
-  try {
-    whatsAppFallback.href = buildWhatsAppUrl();
-  } catch {
-    whatsAppFallback.href = "https://wa.me/22394307799";
-  }
-}
-
 function setSubmitting(isSubmitting) {
   sendButton.disabled = isSubmitting || cartEntries().length === 0;
   sendButton.classList.toggle("is-loading", isSubmitting);
@@ -399,7 +368,6 @@ async function submitOrder() {
   try {
     const savedOrder = await createOrderOnServer(localOrder);
     storePreparedOrder(savedOrder);
-    updateWhatsAppFallback();
     messageNode.dataset.state = "success";
     messageNode.textContent =
       `Commande ${savedOrder.orderNumber} enregistrée. ` +
@@ -419,7 +387,6 @@ async function submitOrder() {
       serverMessage: error.message,
     };
     storePreparedOrder(fallbackOrder);
-    updateWhatsAppFallback();
     messageNode.dataset.state = "success";
     messageNode.textContent =
       `Commande ${fallbackOrder.orderNumber} préparée sur le site. ` +
@@ -441,7 +408,6 @@ document.addEventListener("click", (event) => {
 
 form.addEventListener("input", () => {
   saveCheckoutInfo();
-  updateWhatsAppFallback();
 });
 sendButton.addEventListener("click", submitOrder);
 

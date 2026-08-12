@@ -1,7 +1,6 @@
 const ORDER_KEY = "jolieLabPreparedOrder";
 const ORDERS_KEY = "jolieLabPreparedOrders";
 const TRACKED_KEY = "jolieLabTrackedOrders";
-const CONTACT_PHONE = "22394307799";
 
 const params = new URLSearchParams(window.location.search);
 const requestedOrderNumber = params.get("commande") || params.get("order") || "";
@@ -12,7 +11,6 @@ const itemsNode = document.querySelector("[data-receipt-items]");
 const totalNode = document.querySelector("[data-receipt-products-total]");
 const nameNode = document.querySelector("[data-receipt-name]");
 const phoneNode = document.querySelector("[data-receipt-phone]");
-const whatsAppLink = document.querySelector("[data-thanks-whatsapp]");
 
 function formatPrice(price) {
   return new Intl.NumberFormat("fr-FR").format(Number(price) || 0) + " FCFA";
@@ -52,30 +50,12 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-function buildWhatsAppUrl(order) {
-  if (!order) return `https://wa.me/${CONTACT_PHONE}`;
-
-  const lines = [
-    "Bonjour Jolie Lab Beauty, je viens de passer commande sur le site.",
-    "",
-    `Numero : ${order.orderNumber || requestedOrderNumber || ""}`,
-    `Nom : ${order.customer?.name || ""}`,
-    `Telephone : ${order.customer?.phone || ""}`,
-    "",
-    "Produits :",
-    ...(order.items || []).map((item) => `- ${item.quantity} x ${item.displayName || item.productName} (${formatPrice(item.unitPrice)})`),
-  ];
-
-  return `https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(lines.join("\n"))}`;
-}
-
 function renderOrder(order) {
   numberNode.textContent = order?.orderNumber || requestedOrderNumber || "JLB-...";
   dateNode.textContent = formatDate(order?.createdAt || order?.localPreparedAt);
   totalNode.textContent = formatPrice(order?.productsTotal || 0);
   nameNode.textContent = order?.customer?.name || "--";
   phoneNode.textContent = order?.customer?.phone || "--";
-  whatsAppLink.href = buildWhatsAppUrl(order);
 
   const items = Array.isArray(order?.items) ? order.items : [];
   if (!items.length) {

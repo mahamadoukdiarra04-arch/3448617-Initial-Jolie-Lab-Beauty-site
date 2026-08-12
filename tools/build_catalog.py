@@ -243,12 +243,12 @@ def product_usage(product: dict) -> str:
     if category == "Maquillage":
         return "Appliquer en fine couche et estomper progressivement. Choisir la teinte avec soin avant validation de la commande."
     if category in {"Cheveux", "Homme"}:
-        return "Appliquer régulièrement selon la routine choisie. Demander confirmation sur WhatsApp pour la fréquence conseillée."
+        return "Appliquer régulièrement selon la routine choisie. Confirmer la fréquence conseillée lors de la validation de commande."
     if category == "Packs":
         return "Utiliser les produits du pack dans l'ordre conseillé au moment de la commande. Faire un test sur une petite zone si la peau est sensible."
     if category == "Visage":
         return "Appliquer sur peau propre et commencer progressivement. Éviter le contour des yeux et demander conseil en cas de peau sensible."
-    return "Utiliser selon le besoin ciblé et confirmer la routine complète sur WhatsApp avant commande."
+    return "Utiliser selon le besoin ciblé et confirmer la routine complète lors de la validation de commande."
 
 
 def suited_for(product: dict) -> str:
@@ -382,8 +382,6 @@ def render_page(product: dict, products: list[dict], logo_path: str | None) -> s
         if logo_path
         else '<span class="brand-logo-fallback">JL</span>'
     )
-    whatsapp_text = f"Bonjour Jolie Lab Beauty, je souhaite commander : {product['name']} ({price_label})."
-    whatsapp_url = "https://wa.me/22394307799?text=" + html.escape(__import__("urllib.parse").parse.quote(whatsapp_text))
     return f"""<!doctype html>
 <html lang="fr">
   <head>
@@ -400,7 +398,7 @@ def render_page(product: dict, products: list[dict], logo_path: str | None) -> s
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="../styles.css?v=20260812-site-only" />
     <script type="application/ld+json">{product_json_ld(product)}</script>
 {META_PIXEL_HEAD}
   </head>
@@ -445,8 +443,7 @@ def render_page(product: dict, products: list[dict], logo_path: str | None) -> s
 {variant_selector}
 
           <div class="product-action-row">
-            <button class="button button-primary" type="button" data-product-add>Ajouter au panier</button>
-            <a class="button button-soft" href="{whatsapp_url}" target="_blank" rel="noreferrer">Commander sur WhatsApp</a>
+            <button class="button button-primary" type="button" data-product-add>Passer commande</button>
           </div>
           <p class="product-feedback" data-product-feedback aria-live="polite"></p>
 
@@ -484,9 +481,8 @@ def render_page(product: dict, products: list[dict], logo_path: str | None) -> s
       </section>
     </main>
 
-    <a class="floating-whatsapp" href="https://wa.me/22394307799" target="_blank" rel="noreferrer" aria-label="Contacter Jolie Lab Beauty sur WhatsApp">WhatsApp</a>
-    <script src="../data/products.js"></script>
-    <script src="../product-page.js?v=20260805-phase6"></script>
+    <script src="../data/products.js?v=20260812-site-only"></script>
+    <script src="../product-page.js?v=20260812-site-only"></script>
   </body>
 </html>
 """

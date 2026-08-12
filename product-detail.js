@@ -1,7 +1,3 @@
-const CONTACT = {
-  phone: "22394307799",
-};
-
 let products = window.JOLIE_PRODUCTS || [];
 let currentProduct = null;
 let checkoutRedirectPending = false;
@@ -180,7 +176,6 @@ function renderProduct(product) {
   const images = product.images?.length ? product.images : ["assets/brand/hero-01.jpeg"];
   const poster = productImage(images[0]);
   const related = products.filter((item) => String(item.id) !== String(product.id) && item.category === product.category).slice(0, 3);
-  const whatsappText = `Bonjour Jolie Lab Beauty, je souhaite commander : ${product.name} (${productPriceLabel(product)}).`;
   detailRoot.innerHTML = `
     <nav class="breadcrumb" aria-label="Fil d'Ariane">
       <a href="index.html#boutique">Boutique</a>
@@ -224,7 +219,6 @@ function renderProduct(product) {
 
         <div class="product-action-row">
           <button class="button button-primary" type="button" data-product-add>Passer commande</button>
-          <a class="button button-soft" href="https://wa.me/${CONTACT.phone}?text=${encodeURIComponent(whatsappText)}" target="_blank" rel="noreferrer">Commander sur WhatsApp</a>
         </div>
         <p class="product-feedback" data-product-feedback aria-live="polite"></p>
 
@@ -240,7 +234,7 @@ function renderProduct(product) {
           </article>
           <article>
             <h2>Conseil d'utilisation</h2>
-            <p>${escapeHtml(product.usage || "Demander confirmation sur WhatsApp pour la routine conseillée.")}</p>
+            <p>${escapeHtml(product.usage || "Confirmer la routine conseillée lors de la validation de commande.")}</p>
           </article>
           <article>
             <h2>Livraison & paiement</h2>
