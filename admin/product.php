@@ -196,7 +196,7 @@ $hasDefaultVariant = array_filter($variantRows, static fn (array $row): bool => 
           </label>
           <label>
             Prix principal
-            <input name="price" type="number" min="1" step="500" value="<?= jolie_admin_h($form['price']) ?>" required data-product-price />
+            <input name="price" type="text" inputmode="numeric" value="<?= jolie_admin_h($form['price']) ?>" placeholder="ex: 6000 ou 6 000f" data-product-price />
           </label>
           <label>
             Note de prix
@@ -293,7 +293,7 @@ $hasDefaultVariant = array_filter($variantRows, static fn (array $row): bool => 
               </label>
               <label>
                 Prix
-                <input name="variant_prices[]" type="number" min="1" step="500" value="<?= jolie_admin_h($variant['price'] ?? '') ?>" placeholder="13000" />
+                <input name="variant_prices[]" type="text" inputmode="numeric" value="<?= jolie_admin_h($variant['price'] ?? '') ?>" placeholder="13000" />
               </label>
               <label class="variant-radio">
                 <input name="variant_default" type="radio" value="<?= (int) $index ?>" <?= ((int) ($variant['is_default'] ?? 0) === 1 || (!$hasDefaultVariant && $index === 0)) ? 'checked' : '' ?> />

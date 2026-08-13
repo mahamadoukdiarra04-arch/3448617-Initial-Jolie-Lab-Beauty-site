@@ -39,9 +39,14 @@ function adminSlugify(value) {
 }
 
 function adminFormatPrice(value) {
-  const price = Number(value) || 0;
+  const price = adminParsePrice(value);
   if (price <= 0) return "Prix";
   return new Intl.NumberFormat("fr-FR").format(price) + " FCFA";
+}
+
+function adminParsePrice(value) {
+  const digits = String(value || "").replace(/[^\d]/g, "");
+  return digits ? Number(digits) || 0 : 0;
 }
 
 function adminMediaUrl(url) {
@@ -124,7 +129,7 @@ function adminCreateVariantRow(list) {
     </label>
     <label>
       Prix
-      <input name="variant_prices[]" type="number" min="1" step="500" placeholder="13000" />
+      <input name="variant_prices[]" type="text" inputmode="numeric" placeholder="13000" />
     </label>
     <label class="variant-radio">
       <input name="variant_default" type="radio" value="0" />
@@ -203,6 +208,50 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   const formMode = form.dataset.productMode || "edit";
   let productSubmitter = null;
 
+  function variantRows() {
+    return variantList ? Array.from(variantList.querySelectorAll("[data-variant-row]")) : [];
+  }
+
+  function variantPriceFromRow(row) {
+    const field = row?.querySelector('[name="variant_prices[]"]');
+    return adminParsePrice(field?.value);
+  }
+
+  function defaultVariantPrice() {
+    const rows = variantRows();
+    const checked = variantList?.querySelector('[name="variant_default"]:checked');
+    const checkedRow = checked?.closest("[data-variant-row]");
+    const checkedPrice = variantPriceFromRow(checkedRow);
+    if (checkedPrice > 0) return checkedPrice;
+
+    for (const row of rows) {
+      const price = variantPriceFromRow(row);
+      if (price > 0) return price;
+    }
+
+    return 0;
+  }
+
+  function mainDisplayPrice() {
+    return adminParsePrice(priceInput?.value) || defaultVariantPrice();
+  }
+
+  function normalizePriceField(field) {
+    if (!field) return;
+    const price = adminParsePrice(field.value);
+    if (price > 0) field.value = String(price);
+  }
+
+  function preparePricesForSubmit() {
+    normalizePriceField(priceInput);
+    variantRows().forEach((row) => normalizePriceField(row.querySelector('[name="variant_prices[]"]')));
+
+    if (priceInput && adminParsePrice(priceInput.value) <= 0) {
+      const fallbackPrice = defaultVariantPrice();
+      if (fallbackPrice > 0) priceInput.value = String(fallbackPrice);
+    }
+  }
+
   function currentCategoryLabel() {
     if (categoryInput?.value === "__new__") {
       return newCategoryInput?.value.trim() || "Nouvelle categorie";
@@ -220,7 +269,7 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
   function updateProductPreview() {
     if (previewName) previewName.textContent = nameInput?.value.trim() || "Nom du produit";
     if (previewCategory) previewCategory.textContent = currentCategoryLabel();
-    if (previewPrice) previewPrice.textContent = adminFormatPrice(priceInput?.value);
+    if (previewPrice) previewPrice.textContent = adminFormatPrice(mainDisplayPrice());
     const firstImage = adminParseMediaLines(imageLines?.value || "")[0]?.url;
     const firstPendingImage = adminFilesFromInput(imageUpload)[0];
     if (previewImage) {
@@ -357,27 +406,36 @@ document.querySelectorAll("[data-product-admin-form]").forEach((form) => {
       addError(newCategoryInput, "Saisissez le nom de la nouvelle categorie.");
     }
 
-    if (!priceInput?.value || Number(priceInput.value) <= 0) {
-      addError(priceInput, "Indiquez le prix principal du produit.");
-    }
-
     if (!descriptionInput?.value.trim()) {
       addError(descriptionInput, "Ajoutez la description originale.");
     }
 
-    variantList?.querySelectorAll("[data-variant-row]").forEach((row) => {
+    let hasVariantPrice = false;
+    variantRows().forEach((row) => {
       const fields = Array.from(row.querySelectorAll("input"));
       const keyField = fields.find((field) => field.name === "variant_ids[]");
       const nameField = fields.find((field) => field.name === "variant_names[]");
       const priceField = fields.find((field) => field.name === "variant_prices[]");
       const hasVariant = [keyField, nameField, priceField].some((field) => field?.value.trim());
+      const price = adminParsePrice(priceField?.value);
 
       if (!hasVariant) return;
       if (!nameField?.value.trim()) addError(nameField, "Completez le nom de cette variante.");
-      if (!priceField?.value || Number(priceField.value) <= 0) addError(priceField, "Indiquez le prix de chaque variante commencee.");
+      if (price <= 0) {
+        addError(priceField, "Indiquez le prix de chaque variante commencee.");
+      } else {
+        hasVariantPrice = true;
+      }
     });
 
-    if (!errors.length) return;
+    if (adminParsePrice(priceInput?.value) <= 0 && !hasVariantPrice) {
+      addError(priceInput, "Indiquez le prix principal ou au moins une variante avec prix.");
+    }
+
+    if (!errors.length) {
+      preparePricesForSubmit();
+      return;
+    }
 
     event.preventDefault();
     adminShowProductValidation(form, errors);

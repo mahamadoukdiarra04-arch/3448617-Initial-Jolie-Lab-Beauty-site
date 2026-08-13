@@ -8,7 +8,7 @@ require_once __DIR__ . '/../includes/admin_products.php';
 
 function jolie_admin_asset(string $path): string
 {
-    return 'assets/' . ltrim($path, '/') . '?v=20260812-product-form-flow';
+    return 'assets/' . ltrim($path, '/') . '?v=20260813-product-price-fix';
 }
 
 function jolie_admin_setup_text(Throwable $error): string

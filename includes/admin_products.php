@@ -209,6 +209,26 @@ function jolie_product_positive_int(mixed $value, string $label, array &$errors,
     return (int) $number;
 }
 
+function jolie_product_price_int(mixed $value, string $label, array &$errors, string $key, bool $required = true): int
+{
+    $raw = trim((string) $value);
+    if ($raw === '') {
+        if ($required) {
+            $errors[$key] = "{$label} est obligatoire.";
+        }
+        return 0;
+    }
+
+    $digits = preg_replace('/[^\d]/u', '', $raw) ?? '';
+    $number = $digits !== '' ? filter_var($digits, FILTER_VALIDATE_INT) : false;
+    if ($number === false || $number < 1) {
+        $errors[$key] = "{$label} est invalide.";
+        return 0;
+    }
+
+    return (int) $number;
+}
+
 function jolie_product_media_from_text(string $raw, string $type, array &$errors, string $field): array
 {
     $media = [];
@@ -438,7 +458,7 @@ function jolie_product_variants_from_payload(array $payload, array &$errors): ar
             $name = mb_substr($name, 0, 180);
         }
 
-        $price = jolie_product_positive_int($priceRaw, 'Le prix de variante', $errors, "variant_prices.{$index}");
+        $price = jolie_product_price_int($priceRaw, 'Le prix de variante', $errors, "variant_prices.{$index}");
         $variantKey = jolie_product_slugify($rawKey !== '' ? $rawKey : $name);
         if (isset($seenKeys[$variantKey])) {
             $errors["variant_ids.{$index}"] = 'Deux variantes utilisent la meme cle.';
@@ -485,18 +505,31 @@ function jolie_admin_normalize_product_payload(array $payload): array
         $errors['category'] = 'La categorie choisie est invalide.';
     }
 
-    $price = jolie_product_positive_int($payload['price'] ?? null, 'Le prix', $errors, 'price');
-    $sortOrder = jolie_product_positive_int($payload['sort_order'] ?? 9999, "L'ordre", $errors, 'sort_order', true);
-    $description = (string) ($payload['description'] ?? '');
-    if (trim($description) === '') {
-        $errors['description'] = 'La description est obligatoire.';
-    }
-
     $media = array_merge(
         jolie_product_media_from_text((string) ($payload['image_urls'] ?? ''), 'image', $errors, 'image_urls'),
         jolie_product_media_from_text((string) ($payload['video_urls'] ?? ''), 'video', $errors, 'video_urls')
     );
     $variants = jolie_product_variants_from_payload($payload, $errors);
+    $price = jolie_product_price_int($payload['price'] ?? null, 'Le prix', $errors, 'price', false);
+    if ($price <= 0) {
+        $defaultVariant = null;
+        foreach ($variants as $variant) {
+            if ((int) ($variant['is_default'] ?? 0) === 1) {
+                $defaultVariant = $variant;
+                break;
+            }
+        }
+        $fallbackVariant = $defaultVariant ?: ($variants[0] ?? null);
+        $price = (int) ($fallbackVariant['price'] ?? 0);
+        if ($price <= 0) {
+            $errors['price'] = 'Le prix principal ou un prix de variante est obligatoire.';
+        }
+    }
+    $sortOrder = jolie_product_positive_int($payload['sort_order'] ?? 9999, "L'ordre", $errors, 'sort_order', true);
+    $description = (string) ($payload['description'] ?? '');
+    if (trim($description) === '') {
+        $errors['description'] = 'La description est obligatoire.';
+    }
 
     if ($errors) {
         throw new JolieValidationException($errors);
