@@ -181,7 +181,6 @@
 
   async function loadProducts(fallbackProducts = window.JOLIE_PRODUCTS || []) {
     const fallback = (fallbackProducts || []).map(normalizeProduct);
-    const baseProducts = await loadBaseProducts(fallback);
 
     if (canUseAdminProducts()) {
       try {
@@ -191,13 +190,17 @@
           id: product.id || product.productId || product._id || "",
           slug: product.slug || "",
         }));
-        return mergeAdminProducts(baseProducts, normalizedAdminProducts, normalizedHiddenProducts);
+        if (normalizedAdminProducts.length || normalizedHiddenProducts.length) {
+          return normalizedAdminProducts
+            .slice()
+            .sort((first, second) => (Number(first.sortOrder) || 9999) - (Number(second.sortOrder) || 9999));
+        }
       } catch (error) {
         console.warn("Admin products unavailable, using catalogue fallback.", error);
       }
     }
 
-    return baseProducts;
+    return loadBaseProducts(fallback);
   }
 
   window.JolieCatalog = {

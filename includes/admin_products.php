@@ -346,6 +346,15 @@ function jolie_admin_uploaded_file_mime(string $path): string
     return function_exists('mime_content_type') ? (string) mime_content_type($path) : '';
 }
 
+function jolie_admin_upload_label(int $bytes): string
+{
+    if ($bytes >= 1024 * 1024) {
+        return (string) round($bytes / 1024 / 1024) . ' Mo';
+    }
+
+    return (string) max(1, (int) ceil($bytes / 1024)) . ' Ko';
+}
+
 function jolie_admin_upload_product_media(?array $files, string $type, array &$errors): array
 {
     $items = jolie_admin_uploaded_files($files);
@@ -378,7 +387,7 @@ function jolie_admin_upload_product_media(?array $files, string $type, array &$e
             continue;
         }
         if ((int) $item['size'] <= 0 || (int) $item['size'] > (int) $config['max_bytes']) {
-            $errors[$errorKey] = "Ce fichier {$config['label']} est trop lourd.";
+            $errors[$errorKey] = "Ce fichier {$config['label']} est trop lourd. Limite : " . jolie_admin_upload_label((int) $config['max_bytes']) . '.';
             continue;
         }
 
@@ -428,6 +437,32 @@ function jolie_admin_append_media_upload_lines(string $raw, array $uploads): str
     }
 
     return implode("\n", $lines);
+}
+
+function jolie_admin_product_slug_exists(string $slug, ?int $id = null): bool
+{
+    $stmt = jolie_pdo()->prepare('SELECT id FROM products WHERE slug = :slug AND id <> :id LIMIT 1');
+    $stmt->execute([
+        'slug' => $slug,
+        'id' => $id ?: 0,
+    ]);
+
+    return (bool) $stmt->fetch();
+}
+
+function jolie_admin_unique_product_slug(string $slug, ?int $id = null): string
+{
+    $base = trim($slug) !== '' ? trim($slug) : 'produit';
+    $candidate = mb_substr($base, 0, 180);
+    $counter = 2;
+
+    while (jolie_admin_product_slug_exists($candidate, $id)) {
+        $suffix = '-' . $counter;
+        $candidate = mb_substr($base, 0, 180 - mb_strlen($suffix)) . $suffix;
+        $counter++;
+    }
+
+    return $candidate;
 }
 
 function jolie_product_variants_from_payload(array $payload, array &$errors): array
@@ -757,9 +792,9 @@ function jolie_admin_save_product(?int $id, array $payload): int
     $product = jolie_admin_normalize_product_payload($payload);
     $pdo = jolie_pdo();
 
-    $check = $pdo->prepare('SELECT id FROM products WHERE slug = :slug AND id <> :id LIMIT 1');
-    $check->execute(['slug' => $product['slug'], 'id' => $id ?: 0]);
-    if ($check->fetch()) {
+    if ($id === null) {
+        $product['slug'] = jolie_admin_unique_product_slug($product['slug']);
+    } elseif (jolie_admin_product_slug_exists($product['slug'], $id)) {
         throw new JolieValidationException(['slug' => 'Ce slug est deja utilise par un autre produit.']);
     }
 

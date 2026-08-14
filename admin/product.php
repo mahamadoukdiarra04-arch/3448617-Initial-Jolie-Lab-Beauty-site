@@ -41,6 +41,30 @@ function jolie_admin_form_media_src(string $url): string
     return '../' . ltrim($url, '/');
 }
 
+function jolie_admin_ini_size_to_bytes(string $value): int
+{
+    $value = trim($value);
+    if ($value === '') {
+        return 0;
+    }
+
+    $unit = strtolower($value[strlen($value) - 1]);
+    $number = (float) $value;
+
+    return (int) match ($unit) {
+        'g' => $number * 1024 * 1024 * 1024,
+        'm' => $number * 1024 * 1024,
+        'k' => $number * 1024,
+        default => $number,
+    };
+}
+
+function jolie_admin_post_limit_message(): string
+{
+    $limit = ini_get('post_max_size') ?: '160M';
+    return "La video est trop lourde pour le serveur. Essayez une video plus courte ou compressee. Limite serveur actuelle : {$limit}.";
+}
+
 function jolie_admin_variant_rows(array $form): array
 {
     $rows = $form['variants'] ?? [];
@@ -67,6 +91,12 @@ try {
     $categories = jolie_product_categories();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $postLimit = jolie_admin_ini_size_to_bytes((string) ini_get('post_max_size'));
+        $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        if ($postLimit > 0 && $contentLength > $postLimit && empty($_POST) && empty($_FILES)) {
+            throw new JolieValidationException(['video_files' => jolie_admin_post_limit_message()]);
+        }
+
         jolie_verify_csrf();
         $action = (string) ($_POST['action'] ?? 'save');
         $id = (int) ($_POST['id'] ?? $id);
@@ -251,8 +281,8 @@ $hasDefaultVariant = array_filter($variantRows, static fn (array $row): bool => 
           </label>
           <label class="media-upload-card">
             <strong>Ajouter des videos</strong>
-            <span>MP4, WebM, MOV ou M4V</span>
-            <input name="video_files[]" type="file" accept="video/mp4,video/webm,video/quicktime,video/x-m4v" multiple data-media-upload="video" />
+            <span>MP4, WebM, MOV ou M4V jusqu'a 80 Mo</span>
+            <input name="video_files[]" type="file" accept="video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v" multiple data-media-upload="video" />
           </label>
         </div>
         <div class="media-manager-head">
